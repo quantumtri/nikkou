@@ -1,0 +1,58 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/logo-wordmark.png';
+import { cfg, preview, waLink } from '../lib/content.js';
+
+const { home = false } = Astro.props;
+const p = home ? '' : '/';
+
+const hasProof = preview || Object.values(cfg.evidence).some(Boolean);
+const hasFaq = true;
+
+const items = [
+  { href: `${p}#masalah`, label: 'Masalah' },
+  { href: `${p}#teknologi`, label: 'Solusi' },
+  { href: `${p}#cara-pakai`, label: 'Cara pakai' },
+  hasProof && { href: `${p}#bukti`, label: 'Bukti' },
+  { href: `${p}#produk`, label: 'Produk' },
+  hasFaq && { href: `${p}#faq`, label: 'FAQ' },
+].filter(Boolean);
+
+const cta = home ? { href: '#konsultasi' } : { href: waLink, ext: true };
+---
+<header class="header">
+  <div class="header-in">
+    <a class="logo" href={home ? '#atas' : '/'} aria-label="Beranda Nikkou">
+      <Image src={logo} alt="NIKKOU" width={240} loading="eager" />
+    </a>
+    <nav class="nav-links" aria-label="Menu utama">
+      {items.map((i) => <a class="navlink" href={i.href}>{i.label}</a>)}
+    </nav>
+    <div class="header-actions">
+      <a class="btn btn-line" href={cta.href} target={cta.ext ? '_blank' : undefined} rel={cta.ext ? 'noopener' : undefined}>Konsultasi</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Buka menu">
+        <svg class="bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="mnav" id="mnav" aria-label="Menu seluler" hidden>
+    {items.map((i) => <a href={i.href}>{i.label}</a>)}
+  </nav>
+</header>
+
+<script>
+  const btn = document.querySelector<HTMLButtonElement>('.burger');
+  const nav = document.getElementById('mnav');
+  if (btn && nav) {
+    const set = (open: boolean) => {
+      btn.setAttribute('aria-expanded', String(open));
+      btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      nav.hidden = !open;
+    };
+    btn.addEventListener('click', () => set(btn.getAttribute('aria-expanded') !== 'true'));
+    nav.addEventListener('click', (e) => { if ((e.target as HTMLElement).closest('a')) set(false); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+    window.matchMedia('(min-width: 861px)').addEventListener('change', (e) => { if (e.matches) set(false); });
+  }
+</script>

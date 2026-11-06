@@ -1,0 +1,74 @@
+---
+import '../styles/global.css';
+import { getImage } from 'astro:assets';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import WaWidget from '../components/WaWidget.astro';
+import ogSource from '../assets/ruang-tamu-inhaler-putih.png';
+import iconSource from '../assets/logo-symbol.png';
+import logoSource from '../assets/logo-wordmark.png';
+
+const { title, description, home = false, ogType = 'website', jsonLd = [], announce = false } = Astro.props;
+
+const og = await getImage({ src: ogSource, width: 1200, height: 630, format: 'jpg', fit: 'cover' });
+const icon = await getImage({ src: iconSource, width: 96, height: 96, format: 'png' });
+const logo = await getImage({ src: logoSource, width: 600, format: 'png' });
+const abs = (path) => (Astro.site ? new URL(path, Astro.site).href : path);
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site).href : null;
+
+const organization = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: 'Nikkou',
+  ...(Astro.site ? { url: Astro.site.href } : {}),
+  logo: abs(logo.src),
+};
+const graphs = [organization, ...jsonLd];
+---
+<!doctype html>
+<html lang="id" class="motion">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" type="image/png" href={icon.src} />
+    <meta property="og:site_name" content="Nikkou" />
+    <meta property="og:locale" content="id_ID" />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={abs(og.src)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    {canonical && <meta property="og:url" content={canonical} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="theme-color" content="#E83828" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Newsreader:ital,wght@1,400&display=swap" rel="stylesheet" />
+    <script is:inline>
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.remove('motion');
+      setTimeout(function () { if (!window.__motionReady) document.documentElement.classList.remove('motion'); }, 3000);
+    </script>
+    {graphs.map((g) => <script type="application/ld+json" set:html={JSON.stringify(g)} />)}
+  </head>
+  <body>
+    <a class="skip" href="#utama">Lewati ke konten</a>
+    {announce && (
+      <div class="announce">
+        Mau tahu apakah inhaler hidrogen cocok untuk Anda? <a href="#konsultasi">Konsultasi gratis di sini.</a>
+      </div>
+    )}
+    <Header home={home} />
+    <main id="utama">
+      <slot />
+    </main>
+    <Footer home={home} />
+    <WaWidget />
+    <script>
+      import '../scripts/motion.js';
+    </script>
+  </body>
+</html>

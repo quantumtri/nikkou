@@ -1,0 +1,238 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import { cfg, preview, ph, pick, waLink, waLabel } from '../../lib/content.js';
+
+import biru from '../../assets/inhaler-biru-cutout.png';
+import putih from '../../assets/inhaler-putih-cutout.png';
+import ruangTamu from '../../assets/ruang-tamu-inhaler-putih.png';
+import sesi from '../../assets/sesi-samping-tempat-tidur.png';
+
+const title = 'Apa Itu Terapi Hidrogen? Penjelasan untuk Pemula';
+const description = 'Penjelasan sederhana tentang hidrogen molekuler, cara orang memakainya, dan hal yang perlu diketahui sebelum mencoba. Bukan obat dan bukan saran medis.';
+
+const a = cfg.articles.main;
+const author = pick(a.author, 'Nama penulis');
+const date = pick(a.date, 'dd/mm/yyyy');
+const reviewer = pick(a.reviewedBy, 'Nama dokter, gelar, dan institusi. Isi setelah ada persetujuan tertulis.');
+const meta = [author && `Ditulis oleh ${author}`, date && `Diperbarui ${date}`, '5 menit baca'].filter(Boolean).join(' · ');
+
+const biruName = pick(cfg.products.biru.name, 'Nama Produk');
+const prodTitle = biruName ? `Inhaler Biru ${biruName}` : 'Inhaler Biru';
+const prodPrice = pick(cfg.products.biru.price, 'Rp harga');
+
+const toc = [
+  ['apa-itu', 'Apa itu terapi hidrogen?'],
+  ['penelitian', 'Bagaimana hidrogen diteliti?'],
+  ['cara-pakai', 'Cara memakai hidrogen'],
+  ['tanya-dokter', 'Siapa yang perlu bertanya ke dokter?'],
+  ['alat-aman', 'Ciri alat yang dirancang aman'],
+  ['kesimpulan', 'Kesimpulan'],
+  ['referensi', 'Referensi'],
+];
+
+const faqs = [
+  { q: 'Apakah terapi hidrogen menyembuhkan penyakit?', a: 'Tidak. Hidrogen bukan obat dan penelitiannya masih berkembang. Alat inhalasi tidak menggantikan perawatan dokter.' },
+  { q: 'Berapa lama satu sesi inhalasi?', a: pick(cfg.usage.durasiSesi && `Satu sesi berlangsung ${cfg.usage.durasiSesi}, sesuai petunjuk pemakaian produk.`, 'Durasi sesi sesuai petunjuk pemakaian produk Anda') },
+  { q: 'Apakah aman dipakai setiap hari?', a: pick(cfg.faq.amanDiRumah, 'Jawaban berdasarkan petunjuk pemakaian resmi dan saran dokter') },
+  { q: 'Bagaimana jika saya punya kondisi medis?', a: 'Bicarakan dengan dokter Anda lebih dulu sebelum memakai alat inhalasi hidrogen.' },
+].filter((f) => f.a);
+
+const related = cfg.articles.others
+  .map((o, i) => ({ ...o, ready: Boolean(o.href) || preview, href: o.href ?? '#', img: [biru, sesi, putih][i], alt: ['Inhaler biru', 'Sesi pemakaian di samping tempat tidur', 'Inhaler putih'][i], bg: ['var(--rose)', 'var(--mist)', 'var(--sky-light)'][i], cover: i === 1 }))
+  .filter((r) => r.ready);
+
+const banner = await getImage({ src: ruangTamu, width: 1400, format: 'webp' });
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description,
+    inLanguage: 'id',
+    image: [banner.src],
+    ...(a.author ? { author: { '@type': 'Person', name: a.author } } : {}),
+    ...(a.date ? { dateModified: a.date } : {}),
+    publisher: { '@type': 'Organization', name: 'Nikkou' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+<Base title={`${title} | Nikkou`} description={description} ogType="article" jsonLd={jsonLd}>
+  <!-- Breadcrumb + banner -->
+  <section class="sec art-sec" style="padding:28px 24px 8px">
+    <div class="wrap col" style="gap:20px">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href="/">Beranda</a><span aria-hidden="true">/</span><a href="/#artikel">Artikel</a><span aria-hidden="true">/</span><span class="cur" aria-current="page">Edukasi</span>
+      </nav>
+      <div class="banner">
+        <Image src={ruangTamu} alt="Inhaler putih di ruang tamu dengan lemari marmer dan tanaman" width={1400} loading="eager" />
+        <div class="shade"></div>
+        <div class="banner-in">
+          <span class="tag">Edukasi</span>
+          <h1>{title}</h1>
+          <div class="meta">{meta}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Body -->
+  <section class="sec art-sec" style="padding:48px 24px 72px">
+    <div class="art-layout">
+      <nav class="toc" aria-label="Daftar isi">
+        <b>Daftar isi</b>
+        {toc.map(([id, label]) => <a class="toclink" href={`#${id}`}>{label}</a>)}
+      </nav>
+
+      <article class="article">
+        <p>Terapi hidrogen makin sering dibicarakan, mulai dari klinik kesehatan sampai alat yang dipakai di rumah. Banyak orang belum tahu apa yang sebenarnya dimaksud, bagaimana cara memakainya, dan seberapa kuat bukti ilmiahnya. Artikel ini menjelaskan dasar-dasarnya dengan bahasa sederhana.</p>
+
+        <div class="callout"><strong>Penting.</strong> Terapi hidrogen bukan obat dan tidak menggantikan perawatan dokter. Artikel ini bersifat edukasi, bukan saran medis.</div>
+
+        <h2 id="apa-itu">Apa itu terapi hidrogen?</h2>
+        <p>Hidrogen (H<sub>2</sub>) adalah molekul paling ringan yang ada. Dalam konteks kesehatan, istilah hidrogen molekuler merujuk pada gas H<sub>2</sub> yang dimasukkan ke dalam tubuh, misalnya dengan dihirup atau diminum dalam bentuk air hidrogen.</p>
+        <p>Gas ini tidak berwarna dan tidak berbau. Karena ukurannya sangat kecil, hidrogen mudah menyebar ke jaringan tubuh. Itulah sebabnya para peneliti tertarik mempelajarinya.</p>
+
+        <h2 id="penelitian">Bagaimana hidrogen diteliti?</h2>
+        <p>Perhatian pada hidrogen sebagai senyawa kesehatan meningkat setelah sebuah studi di jurnal <em>Nature Medicine</em> pada 2007. Studi itu melaporkan bahwa hidrogen dapat bekerja sebagai antioksidan selektif pada percobaan laboratorium.</p>
+        <p>Sejak itu, jumlah penelitian tentang hidrogen molekuler terus bertambah, mulai dari studi laboratorium sampai uji klinis berskala kecil. Namun sebagian besar studi masih awal dan melibatkan sedikit peserta, sehingga belum cukup untuk menyatakan bahwa hidrogen dapat mengobati penyakit tertentu.</p>
+
+        <h2 id="cara-pakai">Cara memakai hidrogen</h2>
+        <p>Ada beberapa bentuk yang umum ditemui. Masing-masing punya hal yang perlu diperhatikan.</p>
+        <div class="scroll-x" tabindex="0" role="region" aria-label="Tabel bentuk terapi hidrogen, geser untuk melihat semua kolom">
+          <div class="mini-table">
+            <div class="tr head"><div class="td a">Bentuk</div><div class="td b">Cara pakai</div><div class="td c">Yang perlu diperhatikan</div></div>
+            <div class="tr"><div class="td a">Inhalasi</div><div class="td b">Gas dihirup lewat kanula hidung atau masker dari alat khusus</div><div class="td c">Konsentrasi perlu dikontrol. Hidrogen mudah terbakar bila kadarnya di udara melewati sekitar 4%.</div></div>
+            <div class="tr alt"><div class="td a">Air hidrogen</div><div class="td b">Diminum</div><div class="td c">Gas mudah lepas dari air, sehingga kadarnya turun seiring waktu.</div></div>
+            <div class="tr"><div class="td a">Tablet</div><div class="td b">Dilarutkan dalam air lalu diminum</div><div class="td c">Kadar hidrogen bergantung pada produk dan cara melarutkannya.</div></div>
+          </div>
+        </div>
+
+        <div class="inline-prod">
+          <div class="thumb"><Image src={biru} alt="Inhaler biru" width={240} /></div>
+          <div class="info">
+            <span class="tagbest">Best Seller</span>
+            <div class="nm">{prodTitle}</div>
+            {prodPrice && <div class="pr">{prodPrice}</div>}
+          </div>
+          <div class="row" style="gap:12px">
+            <a class="btn btn-line" href="/#produk">Lihat detail</a>
+            <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">Pesan sekarang</a>
+          </div>
+        </div>
+
+        <h2 id="tanya-dokter">Siapa yang perlu bertanya ke dokter lebih dulu?</h2>
+        <p>Hidrogen belum menjadi pengobatan standar. Karena itu, kelompok berikut sebaiknya berkonsultasi dengan dokter sebelum memakai alat inhalasi hidrogen:</p>
+        <ol>
+          <li>Ibu hamil atau menyusui.</li>
+          <li>Orang dengan penyakit jantung, paru, atau kondisi kronis lain.</li>
+          <li>Orang yang mengonsumsi obat secara rutin.</li>
+          <li>Anak-anak.</li>
+          <li>Siapa pun yang mengalami keluhan berat atau yang penyebabnya belum jelas.</li>
+        </ol>
+        <p>Hentikan pemakaian dan hubungi tenaga kesehatan bila muncul keluhan yang tidak biasa selama atau setelah sesi.</p>
+
+        <h2 id="alat-aman">Ciri alat yang dirancang aman</h2>
+        <p>Bila Anda sedang membandingkan alat inhalasi hidrogen, periksa hal-hal ini:</p>
+        <ul>
+          <li>Konsentrasi hidrogen dijaga di bawah batas mudah terbakar.</li>
+          <li>Ada hasil uji laboratorium untuk kemurnian gas, lengkap dengan nama lab dan nomor sertifikat.</li>
+          <li>Ada katup satu arah dan filter pada jalur napas.</li>
+          <li>Produk memiliki izin edar dan garansi resmi.</li>
+          <li>Penjual menyediakan servis dan pendampingan setelah pembelian.</li>
+        </ul>
+
+        <h2 id="kesimpulan">Kesimpulan</h2>
+        <p>Hidrogen molekuler adalah topik penelitian yang menarik, tetapi buktinya masih berkembang. Bila Anda tertarik mencobanya, pilih alat yang punya bukti keamanan yang jelas, ikuti petunjuk pemakaian, dan bicarakan dengan dokter bila Anda punya kondisi medis.</p>
+
+        <div class="refs" id="referensi">
+          <b>Referensi</b>
+          <div>Ohsawa I, dkk. Hydrogen acts as a therapeutic antioxidant by selectively reducing cytotoxic oxygen radicals. <em>Nature Medicine</em>. 2007;13(6):688&ndash;694.</div>
+          {preview && <div>[Tambahkan referensi lain yang Anda pakai]</div>}
+        </div>
+
+        {reviewer && (
+          <div class="review">
+            <b>Ditinjau secara medis oleh</b>
+            <div style="color:var(--body)">{reviewer}</div>
+          </div>
+        )}
+      </article>
+
+      <aside class="side" aria-label="Produk dan bantuan">
+        <div class="side-card">
+          <div class="pimg" style="background:var(--rose)">
+            <Image src={biru} alt="Inhaler biru" width={480} />
+            <span class="pbadge">Best Seller</span>
+          </div>
+          <div class="body">
+            <div class="nm">{prodTitle}</div>
+            {prodPrice && <div class="pr">{prodPrice}</div>}
+            <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">Pesan sekarang</a>
+            <a class="btn btn-line" href="/#produk">Lihat detail</a>
+          </div>
+        </div>
+        <div class="side-ask">
+          <b>Punya pertanyaan?</b>
+          <span>Tim kami menjawab lewat WhatsApp, gratis.</span>
+          <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">Chat WhatsApp</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="sec paper art-sec" style="padding:72px 24px">
+    <div class="faq-wrap" style="gap:28px">
+      <h2 class="h2" style="font-size:clamp(28px,4vw,40px)">Pertanyaan yang <span class="it">sering ditanyakan</span></h2>
+      <div>
+        {faqs.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Artikel terkait -->
+  {related.length > 0 && (
+    <section class="sec art-sec" style="padding:72px 24px">
+      <div class="wrap col" style="gap:32px">
+        <div class="head-row">
+          <h2 class="h2" style="font-size:clamp(28px,4vw,40px)">Artikel <span class="it">terkait</span></h2>
+          <a class="btn btn-line" href="/#artikel">Lihat semua</a>
+        </div>
+        <div class="acards">
+          {related.map((r) => (
+            <article class="acard">
+              <div class={`aimg${r.cover ? '' : ' pad'}`} style={`background:${r.bg}`}>
+                <Image class={r.cover ? 'cover' : 'contain'} src={r.img} alt={r.alt} width={640} style={r.cover ? 'object-position:center 60%' : ''} />
+                <span class="abadge">{r.category}</span>
+              </div>
+              <div class="abody">
+                <h3>{r.title}</h3>
+                <div class="foot-a"><a class="btn btn-line" href={r.href}>Baca selengkapnya</a></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- CTA -->
+  <section class="cta on-red art-sec" style="padding:72px 24px">
+    <div class="cta-in" style="gap:22px">
+      <h2 style="font-size:clamp(30px,5vw,48px)">Masih ragu? <span class="it">Tanya dulu, gratis.</span></h2>
+      <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">{waLabel}</a>
+    </div>
+  </section>
+</Base>

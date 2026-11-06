@@ -1,0 +1,46 @@
+---
+import { Image } from 'astro:assets';
+import QRCode from 'qrcode';
+import symbol from '../assets/logo-symbol.png';
+import { waLink } from '../lib/content.js';
+
+// QR is generated at build time from WA_NUMBER (module color #C0261B on white).
+const qr = await QRCode.toString(waLink, {
+  type: 'svg',
+  margin: 1,
+  errorCorrectionLevel: 'M',
+  color: { dark: '#C0261B', light: '#FFFFFF' },
+});
+---
+<div class="wa" id="wa">
+  <div class="wa-card" id="wa-card">
+    <button class="wa-min" type="button" aria-label="Minimalkan chat" data-wa-toggle>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
+    </button>
+    <div class="wa-title">Chat WhatsApp sekarang!</div>
+    <a class="wa-qr" href={waLink} target="_blank" rel="noopener" aria-label="Buka WhatsApp untuk konsultasi">
+      <span role="img" aria-label="Kode QR WhatsApp" set:html={qr} style="display:block" />
+    </a>
+    <div class="wa-hint">Pindai kode QR atau klik untuk membuka WhatsApp.</div>
+  </div>
+  <button class="wa-btn" type="button" aria-label="Buka atau tutup chat WhatsApp" aria-controls="wa-card" aria-expanded="true" data-wa-toggle>
+    <Image src={symbol} alt="" width={128} />
+  </button>
+</div>
+
+<script is:inline>
+  (function () {
+    var card = document.getElementById('wa-card');
+    var btn = document.querySelector('.wa-btn');
+    if (!card || !btn) return;
+    function set(open) {
+      card.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+    }
+    // Starts closed on small screens.
+    set(window.innerWidth >= 640);
+    document.querySelectorAll('[data-wa-toggle]').forEach(function (b) {
+      b.addEventListener('click', function () { set(card.hidden); });
+    });
+  })();
+</script>

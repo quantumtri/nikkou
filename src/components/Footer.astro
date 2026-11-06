@@ -1,0 +1,38 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/logo-wordmark.png';
+import { cfg, pick, waLink } from '../lib/content.js';
+
+const { home = false } = Astro.props;
+const p = home ? '' : '/';
+const address = pick(cfg.address, 'Alamat kantor, kota');
+const hours = pick(cfg.hours, 'Jam operasional');
+const company = cfg.company ?? cfg.brand;
+---
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-top">
+      <div class="foot-brand">
+        <div class="foot-logo"><Image src={logo} alt="NIKKOU" width={208} /></div>
+        {(address || hours) && (
+          <p>{address}{address && hours && <br />}{hours}</p>
+        )}
+      </div>
+      <div class="foot-col">
+        <b>Halaman</b>
+        <a class="footlink" href={`${p}#teknologi`}>Teknologi</a>
+        <a class="footlink" href={`${p}#produk`}>Produk</a>
+        <a class="footlink" href={`${p}#cara-pakai`}>Cara pakai</a>
+        <a class="footlink" href={`${p}#faq`}>FAQ</a>
+      </div>
+      <div class="foot-col">
+        <b>Bantuan</b>
+        <a class="footlink" href={waLink} target="_blank" rel="noopener">WhatsApp</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <div>Produk ini bukan obat dan tidak menggantikan saran dokter.</div>
+      <div>&copy; 2026 {company}. Hak cipta dilindungi.</div>
+    </div>
+  </div>
+</footer>

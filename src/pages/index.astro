@@ -1,0 +1,542 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+import { cfg, preview, ph, pick, waLink, waLabel } from '../lib/content.js';
+
+import biru from '../assets/inhaler-biru-cutout.png';
+import putih from '../assets/inhaler-putih-cutout.png';
+import ruangTamu from '../assets/ruang-tamu-inhaler-putih.png';
+import sesi from '../assets/sesi-samping-tempat-tidur.png';
+import dokter from '../assets/dokter-chen-xing-han.png';
+import membaca from '../assets/wanita-membaca-cutout.png';
+import kanula from '../assets/wanita-kanula-cutout.png';
+
+const accessoryImg = Object.values(import.meta.glob('../assets/aksesori.*', { eager: true, import: 'default' }))[0];
+
+/* ---------- Teknologi ---------- */
+const annotations = [
+  { t: 'Jendela tabung berlampu biru', d: pick(cfg.tech.tabung, 'Fungsi jendela tabung pada saat alat bekerja') },
+  { t: 'Layar waktu dan indikator', d: pick(cfg.tech.indikator, 'Jelaskan indikator air, filter, dan suhu dalam Bahasa Indonesia') },
+  { t: 'Pegangan kain di sisi alat', d: 'Memudahkan Anda memindahkan alat dari satu ruangan ke ruangan lain.' },
+  { t: 'Lampu di dasar alat', d: pick(cfg.tech.lampuDasar, 'Fungsi lampu dasar, misalnya penanda alat menyala') },
+].filter((a) => a.d);
+
+const labTest = cfg.evidence.labTest ?? (preview ? { lab: '[Nama lab]', certificate: '[nomor sertifikat]', purity: '[angka kemurnian]' } : null);
+const batas = pick(cfg.tech.batasKonsentrasi, 'batas konsentrasi');
+const fitur = pick(cfg.tech.fiturKeselamatan, 'Daftar fitur keselamatan: katup satu arah, filter, sensor, dan pemutus otomatis');
+const pillars = [
+  labTest && { icon: 'drop', tone: 'rose', t: 'Kemurnian terukur', d: `Membran PEM memisahkan hidrogen dari air. Hasil ujinya ${labTest.purity} dan bisa Anda lihat sendiri.` },
+  batas && { icon: 'gauge', tone: 'sky', t: 'Kadar terkontrol', d: `Konsentrasi hidrogen dijaga tetap di bawah batas aman, yaitu ${batas}, di setiap sesi.` },
+  fitur && { icon: 'shield', tone: 'grey', t: 'Perlindungan berlapis', d: fitur },
+].filter(Boolean);
+
+/* ---------- Cara pakai ---------- */
+const air = pick(cfg.usage.jenisAir, 'jenis air yang dianjurkan');
+const siap = pick(cfg.usage.durasiPersiapan, 'durasi persiapan');
+const sesiDur = pick(cfg.usage.durasiSesi, 'durasi sesi');
+const step1 = [air ? `Gunakan ${air}.` : 'Isi tangki dengan air sesuai petunjuk pemakaian.', siap ? `Alat siap dalam ${siap}.` : null].filter(Boolean).join(' ');
+const step2 = [sesiDur ? `Satu sesi berlangsung ${sesiDur}.` : null, 'Anda bisa membaca atau beristirahat.'].filter(Boolean).join(' ');
+
+/* ---------- Bukti ---------- */
+const izin = cfg.evidence.izinEdar ?? (preview ? { number: '[Nomor izin edar Kemenkes]', validUntil: '[tanggal berlaku]' } : null);
+const garansi = pick(cfg.evidence.garansi, 'Lama garansi dan cakupannya');
+const servis = pick(cfg.evidence.servis, 'Lokasi servis, jam layanan, dan kontak WhatsApp');
+const proofs = [
+  izin && { icon: 'shieldcheck', t: 'Izin edar', d: izin.validUntil ? `${izin.number}, berlaku hingga ${izin.validUntil}` : izin.number },
+  labTest && { icon: 'flask', t: 'Hasil uji laboratorium', d: `${labTest.lab}, sertifikat ${labTest.certificate}, kemurnian ${labTest.purity}` },
+  garansi && { icon: 'award', t: 'Garansi resmi', d: garansi },
+  servis && { icon: 'chat', t: 'Servis dan pendampingan', d: servis },
+].filter(Boolean);
+
+/* ---------- Produk ---------- */
+const mkProduct = (key, base, extra) => {
+  const c = cfg.products[key];
+  const name = pick(c.name, 'Nama Produk');
+  return {
+    ...extra,
+    title: name ? `${base} ${name}` : base,
+    price: pick(c.price, 'Rp harga'),
+    strike: c.strikePrice ?? ph('Rp harga coret'),
+    off: c.discount ?? ph('xx%'),
+    realName: c.name,
+    realPrice: c.price,
+  };
+};
+const products = [
+  mkProduct('biru', 'Inhaler Biru', { img: biru, alt: 'Inhaler biru', bg: 'var(--rose)', badge: 'Best Seller', badgeBg: 'var(--deep)' }),
+  mkProduct('putih', 'Inhaler Putih', { img: putih, alt: 'Inhaler putih', bg: 'var(--sky-light)', badge: 'Varian putih', badgeBg: '#10304f' }),
+];
+const accPrice = pick(cfg.products.aksesori.price, 'Rp harga mulai dari');
+const showAccessory = Boolean(accessoryImg) || preview;
+
+/* ---------- Konsultasi ---------- */
+const hours = pick(cfg.hours, 'jam layanan');
+
+/* ---------- Perbandingan ---------- */
+const compare = [
+  { label: 'Konsentrasi di bawah batas aman', other: 'Tidak pasti', show: !!batas },
+  { label: 'Kemurnian hidrogen teruji lab', other: 'Jarang ada', show: !!labTest },
+  { label: 'Katup satu arah dan filter', other: 'Bervariasi', show: !!fitur },
+  { label: 'Izin edar dan garansi resmi', other: 'Sering tidak ada', show: !!izin && !!garansi },
+  { label: 'Servis dan pendampingan lokal', other: 'Tidak ada', show: !!servis },
+].filter((r) => r.show);
+const numWord = ['Nol', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima'][compare.length];
+
+/* ---------- Dokter & testimoni ---------- */
+const showDoctor = cfg.doctor.permission === true || preview;
+const testimonials = cfg.testimonials.length
+  ? cfg.testimonials
+  : preview
+    ? ['pertama', 'kedua', 'ketiga'].map((n) => ({ quote: `[Testimoni asli pengguna ${n}, dengan izin tertulis]`, name: '[Nama, kota]', duration: '[Lama pemakaian]' }))
+    : [];
+const avatarBg = ['var(--rose)', 'var(--sky-light)', 'var(--mist)'];
+
+/* ---------- FAQ ---------- */
+const faqs = [
+  { q: 'Apakah aman dipakai di rumah?', a: pick(cfg.faq.amanDiRumah, 'Jawaban berdasarkan fitur keselamatan alat dan petunjuk penggunaan resmi') },
+  {
+    q: 'Siapa yang sebaiknya berkonsultasi dulu?',
+    a: ['Ibu hamil, orang dengan kondisi medis tertentu, dan pengguna obat rutin sebaiknya bertanya ke dokter lebih dulu.', pick(cfg.faq.kondisiMedisTambahan, 'Tambahkan daftar resmi')].filter(Boolean).join(' '),
+  },
+  { q: 'Apakah alat ini menyembuhkan penyakit?', a: 'Tidak. Alat ini bukan obat dan tidak menggantikan perawatan dokter.' },
+  { q: 'Bagaimana jika alat bermasalah?', a: pick(cfg.faq.garansiServis, 'Prosedur garansi, lokasi servis, dan waktu penanganan') },
+].filter((f) => f.a);
+
+/* ---------- Artikel ---------- */
+const mainDate = pick(cfg.articles.main.date, 'dd/mm/yyyy');
+const others = cfg.articles.others.map((a, i) => ({
+  ...a,
+  summary: pick(a.summary, 'Ringkasan 2 sampai 3 baris dari artikel'),
+  date: pick(a.date, 'dd/mm/yyyy'),
+  ready: Boolean(a.href) || preview,
+  href: a.href ?? '#artikel',
+  img: [biru, sesi, putih][i],
+  imgAlt: ['Inhaler biru', 'Sesi pemakaian di samping tempat tidur', 'Inhaler putih'][i],
+  bg: ['var(--rose)', 'var(--mist)', 'var(--sky-light)'][i],
+  cover: i === 1,
+})).filter((a) => a.ready);
+
+/* ---------- SEO ---------- */
+const jsonLd = [];
+if (faqs.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  });
+}
+for (const p of products) {
+  if (p.realName && p.realPrice) {
+    jsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: `${p.title}`,
+      offers: { '@type': 'Offer', priceCurrency: 'IDR', price: String(p.realPrice).replace(/\D/g, '') },
+    });
+  }
+}
+---
+<Base
+  home
+  announce
+  title="Nikkou | Inhaler Hidrogen Murni dengan Kadar Terkontrol"
+  description="Inhaler hidrogen Nikkou dirancang untuk keamanan, dengan kadar terkontrol dan pendampingan tim sejak hari pertama. Konsultasi gratis lewat WhatsApp."
+  jsonLd={jsonLd}
+>
+  <!-- Hero -->
+  <section id="atas" class="hero on-red">
+    <div class="hero-in">
+      <div class="hero-copy">
+        <h1>Hidrogen murni dalam<br /><span class="it">setiap tarikan napas</span></h1>
+        <p class="hero-sub">Inhaler hidrogen dengan kadar terkontrol, dirancang untuk keamanan, dan didampingi tim ahli sejak hari pertama.</p>
+        <div class="btn-row">
+          <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">Konsultasi lewat WhatsApp</a>
+          <a class="btn btn-ghost" href="#produk">Lihat produk</a>
+        </div>
+      </div>
+
+      <div class="hero-grid">
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:8%;right:2%;top:16%;bottom:0;background:#F9CDC9;border-radius:999px 999px 28px 28px"></div>
+            <Image src={membaca} alt="Wanita membaca buku sambil memakai inhaler biru" width={560} loading="eager" style="left:-6%;bottom:-3%;width:104%" />
+          </div>
+          <figcaption class="cap">Sambil membaca</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:4%;right:4%;top:20%;bottom:0;background:#86B3E0;border-radius:36px"></div>
+            <Image src={kanula} alt="Wanita memejamkan mata sambil memasang kanula hidung" width={560} loading="eager" style="left:0;bottom:-3%;width:100%" />
+          </div>
+          <figcaption class="cap">Napas yang tenang</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <Image src={ruangTamu} alt="Inhaler putih di ruang tamu dengan lemari marmer dan tanaman" width={560} loading="eager" style="left:0;top:16%;width:100%;height:84%;border-radius:28px;object-fit:cover;object-position:30% center" />
+          </div>
+          <figcaption class="cap">Cocok di ruang tamu</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:0;right:0;top:16%;bottom:0;background:#F49C94;border-radius:999px 999px 28px 28px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden">
+              <Image src={biru} alt="Inhaler biru tampak miring" width={520} loading="eager" style="position:static;width:92%;height:92%;object-fit:contain" />
+            </div>
+          </div>
+          <figcaption class="cap">Pilihan biru</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Masalah -->
+  <section id="masalah" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <div class="col" style="gap:16px;max-width:820px">
+        <h2 class="h2">Ingin menjaga kesehatan <span class="it">sampai ke tingkat sel</span></h2>
+        <p class="it" style="font-size:22px;line-height:1.5;color:#2a2625">&ldquo;Bagaimana memastikan pendekatan yang saya gunakan benar-benar bermanfaat, tepat sasaran, dan aman?&rdquo;</p>
+        <p class="lead">Di balik pertanyaan itu ada tiga kebutuhan. Perlindungan sel dari stres oksidatif perlu dilakukan secara efektif, sambil tetap menjaga proses normal tubuh.</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ico ico-rose"><Icon name="target" /></div>
+          <h3>Menjangkau lokasi kerusakan</h3>
+          <p>Pendekatan yang dapat mencapai jaringan dan bagian sel yang relevan.</p>
+        </div>
+        <div class="card">
+          <div class="ico ico-sky"><Icon name="dropcheck" /></div>
+          <h3>Bekerja dengan tepat</h3>
+          <p>Mengurangi kerusakan oksidatif tanpa mengganggu molekul yang juga diperlukan tubuh untuk komunikasi dan pertahanan.</p>
+        </div>
+        <div class="card">
+          <div class="ico ico-grey"><Icon name="shieldcheck" /></div>
+          <h3>Manfaat dan keamanan yang jelas</h3>
+          <p>Hasil yang terbukti pada manusia, dengan dosis dan cara penggunaan yang sesuai.</p>
+        </div>
+      </div>
+
+      <div class="sky-box">
+        <div class="col" style="flex:1 1 340px;min-width:0;gap:12px">
+          <h3>Mengapa hidrogen menarik untuk diteliti?</h3>
+          <p>Hidrogen (H<sub>2</sub>) adalah molekul yang sangat kecil dan mudah menyebar (berdifusi). Penelitian awal, di antaranya studi di <em>Nature Medicine</em> (2007), melaporkan potensi perlindungan terhadap kerusakan oksidatif. Karena itu, distribusinya dalam tubuh dan pengaruhnya pada stres oksidatif terus dipelajari.</p>
+        </div>
+        <div class="note-box">
+          <strong>Perlu diingat</strong>
+          <p>Menarik secara mekanisme belum sama dengan terbukti lebih unggul sebagai terapi. Hidrogen bukan obat dan tidak menggantikan perawatan dokter. Karena itu, produk sebaiknya dipilih berdasarkan bukti manfaat dan keamanannya.</p>
+        </div>
+      </div>
+
+      <div class="col" style="gap:8px;padding-top:16px">
+        <h3 class="h2" style="font-size:clamp(24px,3vw,32px);line-height:1.2">Lalu, <span class="it">memilih produknya</span> juga tidak mudah</h3>
+        <p class="lead" style="font-size:18px">Tiga kekhawatiran yang paling sering kami dengar dari calon pembeli.</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ico ico-rose"><Icon name="searchinfo" /></div>
+          <h3>&ldquo;Banyak merek. Mana yang asli dan aman?&rdquo;</h3>
+          <p>Pasar penuh alat dengan keterangan yang tidak jelas. Sulit membedakan mana yang punya izin dan hasil uji, dan mana yang hanya mengaku.</p>
+          <div class="answer"><strong>Jawaban kami:</strong> izin edar dan hasil uji lab yang bisa Anda lihat sendiri.</div>
+        </div>
+        <div class="card">
+          <div class="ico ico-sky"><Icon name="alert" /></div>
+          <h3>&ldquo;Takut kadar hidrogennya tidak terkontrol.&rdquo;</h3>
+          <p>Hidrogen mudah terbakar bila kadarnya terlalu tinggi. Alat tanpa batas konsentrasi yang jelas patut dipertanyakan.</p>
+          <div class="answer"><strong>Jawaban kami:</strong> kadar dijaga di bawah batas aman di setiap sesi.</div>
+        </div>
+        <div class="card">
+          <div class="ico ico-grey"><Icon name="chatlines" /></div>
+          <h3>&ldquo;Setelah beli, siapa yang membantu saya?&rdquo;</h3>
+          <p>Banyak penjual menghilang setelah transfer. Tidak ada panduan pakai, servis, atau pengingat ganti filter.</p>
+          <div class="answer"><strong>Jawaban kami:</strong> garansi resmi, servis lokal, dan pendampingan lewat WhatsApp.</div>
+        </div>
+      </div>
+
+      <div class="band">
+        <div>Karena itu kami membuat inhaler yang setiap klaimnya bisa diperiksa.</div>
+        <a class="btn btn-deep" href="#teknologi">Lihat solusinya</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teknologi -->
+  <section id="teknologi" class="sec rose">
+    <div class="wrap col" style="gap:48px">
+      <div class="col" style="gap:16px;max-width:760px">
+        <div class="eyebrow">Solusinya</div>
+        <h2 class="h2" style="color:var(--darkest)">Teknologi yang <span class="it">menjaga kualitas napas Anda</span></h2>
+        <p class="lead" style="color:#3a2220">Hidrogen dihasilkan dari air lewat elektrolisis PEM.{pillars.length ? ` ${['Nol', 'Satu', 'Dua', 'Tiga'][pillars.length]} hal ini yang kami jaga di setiap unit.` : ''}</p>
+      </div>
+
+      <div class="tech-row">
+        <div class="showcase">
+          <Image src={biru} alt="Inhaler biru dengan tabung kaca dan layar status" width={800} />
+        </div>
+        <div class="anno">
+          {annotations.map((a) => (
+            <div class="anno-i"><div class="dot"></div><div><div class="anno-t">{a.t}</div><div class="anno-d">{a.d}</div></div></div>
+          ))}
+        </div>
+      </div>
+
+      {pillars.length > 0 && (
+        <div class="cards">
+          {pillars.map((p) => (
+            <div class="card white">
+              <div class={`ico lg ico-${p.tone}`}><Icon name={p.icon} /></div>
+              <h3>{p.t}</h3>
+              <p>{p.d}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- Cara pakai -->
+  <section id="cara-pakai" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <h2 class="h2">Mulai dalam <span class="it">tiga langkah</span></h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-img" style="background:var(--rose)"><Image src={biru} alt="Inhaler biru siap dinyalakan" width={640} /></div>
+          <div class="num">1</div>
+          <h3>Isi air dan nyalakan</h3>
+          <p>{step1}</p>
+        </div>
+        <div class="step">
+          <Image class="step-photo" src={sesi} alt="Sesi pemakaian di samping tempat tidur" width={800} />
+          <div class="num">2</div>
+          <h3>Pasang masker, duduk santai</h3>
+          <p>{step2}</p>
+        </div>
+        <div class="step">
+          <div class="step-img" style="background:var(--sky-light)"><Image src={putih} alt="Inhaler putih disimpan rapi" width={640} /></div>
+          <div class="num">3</div>
+          <h3>Bersihkan dan simpan</h3>
+          <p>Bersihkan masker setelah dipakai. Tim kami mengingatkan jadwal penggantian filter.</p>
+        </div>
+      </div>
+      <div class="disclaimer">Konsultasikan dengan dokter Anda sebelum memakai, terutama bila Anda sedang hamil, memiliki kondisi medis, atau mengonsumsi obat rutin. Inhaler hidrogen bukan obat dan tidak menggantikan perawatan dokter.</div>
+    </div>
+  </section>
+
+  <!-- Bukti -->
+  {proofs.length > 0 && (
+    <section id="bukti" class="sec paper" style="padding-bottom:72px">
+      <div class="wrap col" style="gap:40px">
+        <h2 class="h2">Dipercaya karena <span class="it">bisa dibuktikan</span></h2>
+        <div class="cards">
+          {proofs.map((p) => (
+            <div class="proof">
+              <Icon name={p.icon} stroke={1.6} />
+              <h3>{p.t}</h3>
+              <p>{p.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Produk -->
+  <section id="produk" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <h2 class="h2">Pilihan paket <span class="it">untuk Anda</span></h2>
+      <div class="pcards">
+        {products.map((p) => (
+          <div class="pcard">
+            <div class="pimg" style={`background:${p.bg}`}>
+              <Image src={p.img} alt={p.alt} width={640} />
+              <span class="pbadge" style={`background:${p.badgeBg}`}>{p.badge}</span>
+            </div>
+            <div class="pbody">
+              <h3>{p.title}</h3>
+              {p.strike && p.off && <div class="row"><span class="strike">{p.strike}</span><span class="off">{p.off} OFF</span></div>}
+              {p.price && <div class="price">{p.price}</div>}
+              <div><a class="btn btn-line" href="#konsultasi">Pelajari selengkapnya</a></div>
+            </div>
+          </div>
+        ))}
+        {showAccessory && (
+          <div class="pcard">
+            <div class="pimg" style="background:var(--rose)">
+              {accessoryImg ? <Image src={accessoryImg} alt="Masker, selang, dan filter pengganti" width={640} /> : '[Foto produk: masker dan aksesori]'}
+              <span class="pbadge" style="background:#fff;color:var(--darkest)">Suku cadang</span>
+            </div>
+            <div class="pbody">
+              <h3>Aksesori dan penggantian</h3>
+              <div style="color:var(--grey);font-size:15px;line-height:1.5">Masker, selang, dan filter pengganti</div>
+              {accPrice && <div class="price">{accPrice}</div>}
+              <div><a class="btn btn-line" href="#konsultasi">Pelajari selengkapnya</a></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- Konsultasi -->
+  <section id="tanya-tim" class="sec rose">
+    <div class="wrap consult">
+      <div class="consult-fig">
+        <div class="fig">
+          <div class="shape" style="left:10%;right:10%;top:10%;bottom:0;background:#86B3E0;border-radius:999px 999px 32px 32px"></div>
+          <Image src={membaca} alt="Wanita yang sedang bersantai dengan inhaler" width={640} style="left:2%;bottom:-2%;width:96%" />
+          {[['left:0;top:8%', 'Cek kecocokan'], ['right:0;top:46%', 'Panduan pemakaian'], ['left:2%;top:78%', 'Servis dan filter']].map(([pos, label]) => (
+            <div class="chip" style={pos}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#C0261B"/><path d="M7 12.5l3.5 3.5L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>{label}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="consult-copy">
+        <h2 class="h2">Bingung cocok atau tidak? <span class="it">Konsultasi dulu, tanpa biaya.</span></h2>
+        <p class="big">Ceritakan kebutuhan Anda ke tim pendamping kami. Kami bantu memilih varian, menjelaskan cara pakai, dan menjawab pertanyaan sebelum Anda memutuskan membeli.</p>
+        <div><a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">Konsultasi sekarang</a></div>
+        <p class="small">{hours ? `Layanan: ${hours}. ` : ''}Tim pendamping tidak menggantikan dokter. Untuk kondisi medis, tanyakan ke dokter Anda.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Perbandingan -->
+  {compare.length > 0 && (
+    <section class="sec paper">
+      <div class="wrap col" style="max-width:1000px;gap:40px">
+        <div class="col" style="gap:14px;max-width:720px">
+          <h2 class="h2">Apa bedanya dengan <span class="it">alat lain?</span></h2>
+          <p class="lead">{numWord} hal yang sebaiknya Anda periksa sebelum membeli inhaler hidrogen mana pun.</p>
+        </div>
+        <div class="scroll-x" tabindex="0" role="region" aria-label="Tabel perbandingan, geser untuk melihat semua kolom">
+          <div class="table">
+            <div class="tr head">
+              <div class="td">Yang diperiksa</div>
+              <div class="td">Alat kami</div>
+              <div class="td">Alat tanpa standar</div>
+            </div>
+            {compare.map((r, i) => (
+              <div class={`tr${i % 2 ? ' alt' : ''}`}>
+                <div class="td">{r.label}</div>
+                <div class="td" style="display:flex;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Ya"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+                <div class="td no">{r.other}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Dokter (hanya tayang bila ada izin tertulis) -->
+  {showDoctor && (
+    <section class="expert">
+      <div class="expert-in">
+        <div class="expert-photo">
+          <Image src={dokter} alt="dr. Chen Xing-Han, pakar oksigen hiperbarik dan gas medis" width={640} />
+        </div>
+        <div class="expert-copy">
+          <h2 class="h2">Dipercaya <span class="it">dokter senior</span></h2>
+          <p class="lede">Direkomendasikan dan dipakai oleh dokter setingkat direktur rumah sakit dari Universitas Nasional Taiwan (NTU) dan RS Terpadu Min-Sheng.</p>
+          <div class="cred">
+            <div class="role">Pakar oksigen hiperbarik dan gas medis</div>
+            <div class="list">
+              <div class="name">dr. Chen Xing-Han <span>(陳興漢)</span></div>
+              <div class="li first">Mantan Wakil Direktur, RS Terpadu Min-Sheng, Taoyuan</div>
+              <div class="li">Kepala Pusat Terapi Oksigen Hiperbarik, RS Terpadu Min-Sheng</div>
+              <div class="li">Kepala Departemen Penyakit Akibat Kerja, RS Terpadu Min-Sheng</div>
+              <div class="li">Anggota Komite Khusus Terapi Biooksidasi Tiongkok</div>
+              <div class="li">Sarjana Kedokteran, Pendidikan Kedokteran Pertahanan Nasional</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Testimoni -->
+  {testimonials.length > 0 && (
+    <section class="sec paper">
+      <div class="wrap col" style="gap:40px">
+        <h2 class="h2">Cerita <span class="it">pengguna</span></h2>
+        <div class="cards">
+          {testimonials.map((t, i) => (
+            <div class="quote">
+              <p>{t.quote}</p>
+              <div class="who">
+                <div class="avatar" style={`background:${avatarBg[i % 3]}`}></div>
+                <div><b>{t.city ? `${t.name}, ${t.city}` : t.name}</b>{t.duration && <span>{t.duration}</span>}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- FAQ -->
+  <section id="faq" class="sec">
+    <div class="faq-wrap">
+      <h2 class="h2">Pertanyaan yang <span class="it">sering ditanyakan</span></h2>
+      <div>
+        {faqs.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Artikel -->
+  <section id="artikel" class="sec paper">
+    <div class="wrap col" style="gap:40px">
+      <div class="head-row">
+        <h2 class="h2">Artikel <span class="it">kesehatan</span></h2>
+        {others.length > 0 && <a class="btn btn-line" href="#artikel">Lihat semua</a>}
+      </div>
+      <div class="acards">
+        <article class="acard">
+          <div class="aimg" style="background:var(--mist)">
+            <Image class="cover" src={ruangTamu} alt="Inhaler putih di ruang tamu" width={640} style="object-fit:cover;object-position:30% center" />
+            <span class="abadge">Edukasi</span>
+          </div>
+          <div class="abody">
+            <h3>Apa Itu Terapi Hidrogen? Penjelasan untuk Pemula</h3>
+            <p>Penjelasan sederhana tentang hidrogen molekuler, cara orang memakainya, dan hal yang perlu diketahui sebelum mencoba.</p>
+            <div class="foot-a">
+              {mainDate && <span class="date">{mainDate}</span>}
+              <a class="btn btn-line" href="/artikel/apa-itu-terapi-hidrogen">Baca selengkapnya</a>
+            </div>
+          </div>
+        </article>
+        {others.map((a) => (
+          <article class="acard">
+            <div class={`aimg${a.cover ? '' : ' pad'}`} style={`background:${a.bg}`}>
+              <Image class={a.cover ? 'cover' : 'contain'} src={a.img} alt={a.imgAlt} width={640} style={a.cover ? 'object-position:center 60%' : ''} />
+              <span class="abadge">{a.category}</span>
+            </div>
+            <div class="abody">
+              <h3>{a.title}</h3>
+              {a.summary && <p>{a.summary}</p>}
+              <div class="foot-a">
+                {a.date && <span class="date">{a.date}</span>}
+                <a class="btn btn-line" href={a.href}>Baca selengkapnya</a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="konsultasi" class="cta on-red">
+    <div class="cta-in">
+      <h2>Masih ragu? <span class="it">Tanya dulu, gratis.</span></h2>
+      <p>Tim kami menjawab lewat WhatsApp dan membantu Anda memilih paket yang sesuai.</p>
+      <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">{waLabel}</a>
+    </div>
+  </section>
+</Base>
