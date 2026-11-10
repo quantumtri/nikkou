@@ -3,12 +3,15 @@
 namespace App\Filament\Resources\Units\Tables;
 
 use App\Enums\UnitStatus;
+use App\Filament\Pages\Labels;
 use App\Filament\Resources\Units\UnitResource;
 use App\Models\Unit;
 use App\Models\UnitType;
+use Filament\Actions\BulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Collection;
 
 class UnitsTable
 {
@@ -58,6 +61,14 @@ class UnitsTable
                     ->label('Lokasi')
                     ->placeholder('Semua lokasi')
                     ->options(fn () => Unit::query()->distinct()->orderBy('location')->pluck('location', 'location')),
+            ])
+            ->toolbarActions([
+                BulkAction::make('printLabels')
+                    ->label('Cetak label terpilih')
+                    ->color('primary')
+                    ->outlined()
+                    ->visible(fn () => auth()->user()->can('printLabel', Unit::class))
+                    ->action(fn (Collection $records) => redirect(Labels::getUrl(['units' => $records->pluck('id')->implode(',')]))),
             ])
             ->emptyStateHeading('Belum ada unit')
             ->emptyStateDescription('Tambah unit pertama untuk mulai mencatat inventori.');

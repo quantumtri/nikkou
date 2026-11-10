@@ -4,6 +4,7 @@ namespace App\Filament\Resources\Units\Pages;
 
 use App\Filament\Resources\Units\UnitResource;
 use App\Models\Unit;
+use App\Services\LabelService;
 use Filament\Actions\EditAction;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -49,6 +50,7 @@ class ViewUnit extends ViewRecord
         return [
             'unit' => $unit,
             'canSeeDocuments' => auth()->user()->can('update', $unit),
+            'label' => auth()->user()->can('printLabel', Unit::class) ? app(LabelService::class)->labelData($unit) : null,
         ];
     }
 }

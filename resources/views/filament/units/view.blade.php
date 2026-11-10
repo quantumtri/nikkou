@@ -18,7 +18,33 @@
             <span class="nk-chip {{ $chip }}">{{ $unit->statusLabel() }}</span>
         </div>
 
-        <section aria-labelledby="unit-data">
+        <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+        @if ($label)
+            <section style="width: 300px; flex: none" aria-labelledby="unit-label">
+                <h2 id="unit-label" class="nk-sec">Label QR / barcode</h2>
+                <div style="border: 1px solid #1a1a1a; padding: 16px">
+                    <div style="display: flex; gap: 16px; align-items: center">
+                        <img src="{{ $label['qr'] }}" alt="QR {{ $unit->code }}" style="width: 130px; height: 130px; flex: none">
+                        <div style="min-width: 0">
+                            <img src="{{ asset('images/logo-wordmark.png') }}" alt="NIKKOU" style="height: 12px; width: auto; display: block">
+                            <div style="font-size: 20px; line-height: 1.3; margin-top: 8px">{{ $unit->code }}</div>
+                            <div style="font-size: 12px" class="nk-muted">{{ $unit->type->name }}</div>
+                        </div>
+                    </div>
+                    <img src="{{ $label['barcode'] }}" alt="Barcode {{ $unit->code }}" style="display: block; width: 100%; height: 56px; margin-top: 16px">
+                    <div style="font-size: 12px; margin-top: 4px; text-align: center" class="nk-muted">{{ $unit->code }}</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px">
+                    <x-filament::button tag="a" color="primary" :href="\App\Filament\Pages\Labels::getUrl(['units' => $unit->id])">Cetak label</x-filament::button>
+                    <x-filament::button tag="a" color="primary" outlined :href="route('labels.qr', $unit)">Unduh gambar QR</x-filament::button>
+                </div>
+                <p style="font-size: 12px; margin-top: 8px" class="nk-muted">
+                    {{ $unit->label_printed_at ? 'Terakhir dicetak '.$date($unit->label_printed_at).'.' : 'Label belum pernah dicetak.' }}
+                </p>
+            </section>
+        @endif
+
+        <section style="flex: 1; min-width: 320px" aria-labelledby="unit-data">
             <h2 id="unit-data" class="nk-sec">Data unit</h2>
             <div style="display: flex; gap: 40px; flex-wrap: wrap">
                 <dl style="flex: 1; min-width: 280px">
@@ -71,6 +97,7 @@
                 <p class="nk-muted" style="margin-top: 16px">Belum ada foto kondisi awal.</p>
             @endif
         </section>
+        </div>
 
         <div style="display: flex; gap: 16px; flex-wrap: wrap">
             <div class="nk-stat"><span>Total dipinjamkan</span><strong>{{ $unit->loans->count() }} kali</strong></div>

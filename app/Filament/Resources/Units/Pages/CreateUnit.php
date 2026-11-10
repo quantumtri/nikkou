@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\Units\Pages;
 
+use App\Filament\Pages\Labels;
 use App\Filament\Resources\Units\UnitResource;
 use App\Services\UnitService;
+use Filament\Actions\Action;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -53,9 +55,32 @@ class CreateUnit extends CreateRecord
         ], auth()->user());
     }
 
+    public bool $printAfterSave = false;
+
+    protected function getFormActions(): array
+    {
+        return [
+            $this->getCreateFormAction()->label('Simpan unit'),
+            Action::make('createAndPrint')
+                ->label('Simpan dan cetak label')
+                ->color('primary')
+                ->outlined()
+                ->action(fn () => $this->createAndPrint()),
+            $this->getCancelFormAction(),
+        ];
+    }
+
+    public function createAndPrint(): void
+    {
+        $this->printAfterSave = true;
+        $this->create();
+    }
+
     protected function getRedirectUrl(): string
     {
-        return UnitResource::getUrl('view', ['record' => $this->getRecord()]);
+        return $this->printAfterSave
+            ? Labels::getUrl(['units' => $this->getRecord()->getKey()])
+            : UnitResource::getUrl('view', ['record' => $this->getRecord()]);
     }
 
     protected function getCreatedNotificationTitle(): ?string
