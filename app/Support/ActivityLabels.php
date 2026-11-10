@@ -16,6 +16,8 @@ class ActivityLabels
         'unit.label_printed' => 'Label dicetak',
         'loan.created' => 'Dipinjam',
         'loan.returned' => 'Pengembalian',
+        'loan.created_by_override' => 'Dipinjam (override admin)',
+        'loan.closed_by_override' => 'Ditutup lewat override',
     ];
 
     public static function action(ActivityLog $log): string

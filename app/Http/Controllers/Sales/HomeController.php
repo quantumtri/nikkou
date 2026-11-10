@@ -31,15 +31,7 @@ class HomeController extends Controller
                 ->orderBy('due_on')
                 ->limit(10)
                 ->get()
-                ->map(fn (Loan $loan) => [
-                    'id' => $loan->id,
-                    'borrower' => $loan->borrowerName(),
-                    'unit_code' => $loan->unit->code,
-                    'type_label' => $loan->type->label(),
-                    'due_on' => $loan->due_on->locale('id')->translatedFormat('j M'),
-                    'status_label' => $loan->isOverdue() ? 'Lewat jatuh tempo' : $loan->status->label(),
-                    'is_active' => $loan->isActive(),
-                ]),
+                ->map(fn (Loan $loan) => LoanController::row($loan)),
         ]);
     }
 }

@@ -51,6 +51,8 @@ class HandleInertiaRequests extends Middleware
             ],
             'nav' => fn () => $user ? [
                 ['label' => 'Beranda', 'href' => route('sales.home'), 'active' => $request->routeIs('sales.home')],
+                ['label' => 'Pinjam', 'href' => route('sales.loans.create'), 'active' => $request->routeIs('sales.loans.create')],
+                ['label' => 'Riwayat', 'href' => route('sales.loans.index'), 'active' => $request->routeIs('sales.loans.index', 'sales.loans.show')],
             ] : [],
         ];
     }

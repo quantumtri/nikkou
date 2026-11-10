@@ -1,5 +1,5 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import SalesLayout from '@/Layouts/SalesLayout.vue';
 
 defineProps({
@@ -27,17 +27,24 @@ defineProps({
             </div>
         </div>
 
+        <div class="mt-5 flex flex-col gap-3">
+            <Link href="/sales/loans/create" class="btn-primary">Pinjamkan unit</Link>
+        </div>
+
         <div class="mt-7 mb-2 flex items-baseline justify-between">
             <h2 class="text-lg">Peminjaman saya</h2>
+            <Link href="/sales/loans" class="border-b border-nikkou-red-deep text-sm text-nikkou-red-deep">Lihat semua</Link>
         </div>
 
         <ul class="border-t border-nikkou-ink">
-            <li v-for="loan in loans" :key="loan.id" class="flex justify-between gap-3 border-b border-nikkou-line py-3">
-                <div>
-                    <div>{{ loan.borrower }}</div>
-                    <div class="text-xs text-nikkou-muted">{{ loan.unit_code }} | {{ loan.type_label }} | Kembali {{ loan.due_on }}</div>
-                </div>
-                <span class="chip self-start" :class="loan.is_active ? 'chip-bad' : 'chip-neutral'">{{ loan.status_label }}</span>
+            <li v-for="loan in loans" :key="loan.id" class="border-b border-nikkou-line">
+                <Link :href="`/sales/loans/${loan.id}`" class="flex min-h-[56px] justify-between gap-3 py-3">
+                    <div>
+                        <div>{{ loan.borrower }}</div>
+                        <div class="text-xs text-nikkou-muted">{{ loan.unit_code }} | {{ loan.type_label }} | Kembali {{ loan.due_on }}</div>
+                    </div>
+                    <span class="chip self-start" :class="loan.is_active ? 'chip-bad' : 'chip-neutral'">{{ loan.status_label }}</span>
+                </Link>
             </li>
             <li v-if="!loans.length" class="border-b border-nikkou-line py-4 text-nikkou-muted">Belum ada peminjaman.</li>
         </ul>
