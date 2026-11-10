@@ -17,6 +17,10 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->string('whatsapp_number', 20)->nullable();
+            $table->string('role', 20)->default('sales')->index();
+            $table->boolean('is_active')->default(true);
+            $table->timestamp('invited_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

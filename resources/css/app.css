@@ -1,9 +1,69 @@
 @import 'tailwindcss';
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../js/**/*.vue';
 
+/* Nikkou brand: flat, square corners, no shadows (spec section 9). */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Helvetica Neue', Helvetica, Avenir, 'Noto Sans TC', sans-serif;
+
+    --color-nikkou-red: #e83828;
+    --color-nikkou-red-deep: #c0261b; /* small text and buttons */
+    --color-nikkou-red-ink: #7a1d14;
+    --color-nikkou-coral: #f49c94;
+    --color-nikkou-rose: #f9cdc9;
+    --color-nikkou-blue: #86b3e0;
+    --color-nikkou-blue-tint: #d6e6f7;
+    --color-nikkou-blue-ink: #1a3a5c;
+    --color-nikkou-mist: #efefef;
+    --color-nikkou-gray: #727171;
+    --color-nikkou-ink: #1a1a1a;
+    --color-nikkou-muted: #4a4543;
+    --color-nikkou-line: #e6e2e0;
+
+    --radius-xs: 0;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+}
+
+@layer base {
+    body {
+        @apply bg-white font-sans text-sm leading-normal text-nikkou-ink;
+    }
+}
+
+@layer components {
+    /* Touch targets stay at 44px or more on phones. */
+    .btn-primary {
+        @apply flex min-h-[52px] w-full items-center justify-center bg-nikkou-red-deep text-base text-white disabled:opacity-60;
+    }
+    .btn-outline {
+        @apply flex min-h-[52px] w-full items-center justify-center border border-nikkou-red-deep bg-white text-base text-nikkou-red-deep;
+    }
+    .field-label {
+        @apply mt-3.5 mb-1 block text-xs text-nikkou-muted;
+    }
+    .field-input {
+        @apply box-border min-h-[46px] w-full border border-nikkou-gray bg-white px-3 py-2.5 text-nikkou-ink;
+    }
+    .field-error {
+        @apply mt-1 text-xs text-nikkou-red-ink;
+    }
+    .section-title {
+        @apply mt-7 mb-1 border-b border-nikkou-ink pb-1.5 text-xs tracking-[0.08em] text-nikkou-red-deep;
+    }
+    .chip {
+        @apply inline-block px-2 py-0.5 text-xs;
+    }
+    .chip-ok {
+        @apply bg-nikkou-blue-tint text-nikkou-blue-ink;
+    }
+    .chip-bad {
+        @apply bg-nikkou-rose text-nikkou-red-ink;
+    }
+    .chip-neutral {
+        @apply border border-nikkou-gray bg-nikkou-mist text-nikkou-muted;
+    }
 }

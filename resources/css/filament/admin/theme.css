@@ -1,0 +1,42 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@source '../../../../app/Filament/**/*';
+@source '../../../../resources/views/filament/**/*';
+
+/* Nikkou brand: flat, square corners, no shadows (spec section 9). */
+@theme {
+    --font-sans: 'Helvetica Neue', Helvetica, Avenir, 'Noto Sans TC', sans-serif;
+    --radius-xs: 0;
+    --radius-sm: 0;
+    --radius-md: 0;
+    --radius-lg: 0;
+    --radius-xl: 0;
+    --radius-2xl: 0;
+    --radius-3xl: 0;
+}
+
+.fi-body *,
+.fi-body *::before,
+.fi-body *::after {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+}
+
+.fi-body {
+    background: #fff;
+    color: #1a1a1a;
+}
+
+.fi-sidebar {
+    background: #efefef;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    background: #fff;
+    border-left: 3px solid #c0261b;
+}
+
+.fi-header-heading {
+    font-weight: 400;
+    color: #c0261b;
+}
