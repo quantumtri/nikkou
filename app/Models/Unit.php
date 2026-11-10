@@ -69,6 +69,24 @@ class Unit extends Model
         return $this->morphMany(ActivityLog::class, 'subject');
     }
 
+    /** Where the unit is now: the borrower (with the sales name) or its storage location. */
+    public function currentPosition(): string
+    {
+        $loan = $this->status === UnitStatus::OnLoan ? $this->activeLoan : null;
+
+        if (! $loan) {
+            return $this->location;
+        }
+
+        return $loan->borrowerName().' ('.str($loan->sales->name)->before(' ').')';
+    }
+
+    /** Status text shown to users; an overdue loan replaces "Dipinjam". */
+    public function statusLabel(): string
+    {
+        return $this->isOverdue() ? 'Lewat jatuh tempo' : $this->status->label();
+    }
+
     public function isOverdue(): bool
     {
         return $this->status === UnitStatus::OnLoan && (bool) $this->activeLoan?->isOverdue();

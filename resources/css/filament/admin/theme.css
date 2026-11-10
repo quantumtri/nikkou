@@ -40,3 +40,171 @@
     font-weight: 400;
     color: #c0261b;
 }
+
+/* Unit detail page (mockup "Admin: detail inventori"). */
+.nk-sec {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: #c0261b;
+    border-bottom: 1px solid #1a1a1a;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+}
+.nk-kv {
+    display: flex;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #e6e2e0;
+}
+.nk-kv > dt {
+    flex: 0 0 130px;
+    color: #4a4543;
+}
+.nk-kv > dd {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+.nk-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 12px;
+}
+.nk-chip-ok {
+    background: #d6e6f7;
+    color: #1a3a5c;
+}
+.nk-chip-bad {
+    background: #f9cdc9;
+    color: #7a1d14;
+}
+.nk-chip-neutral {
+    background: #efefef;
+    color: #4a4543;
+    border: 1px solid #727171;
+}
+.nk-stat {
+    flex: 1;
+    background: #efefef;
+    padding: 12px 16px;
+}
+.nk-stat > span {
+    display: block;
+    font-size: 12px;
+    color: #4a4543;
+}
+.nk-stat > strong {
+    font-size: 22px;
+    font-weight: 400;
+}
+.nk-tl {
+    border-left: 1px solid #727171;
+    margin-left: 6px;
+    padding: 0 0 14px 18px;
+    position: relative;
+}
+.nk-tl::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 6px;
+    width: 9px;
+    height: 9px;
+    background: #c0261b;
+}
+.nk-tl-muted::before {
+    background: #727171;
+}
+.nk-tl > small {
+    display: block;
+    font-size: 12px;
+    color: #4a4543;
+}
+.nk-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+.nk-table th {
+    text-align: left;
+    font-weight: 400;
+    color: #4a4543;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #1a1a1a;
+}
+.nk-table td {
+    padding: 10px;
+    border-bottom: 1px solid #e6e2e0;
+}
+.nk-link {
+    color: #c0261b;
+    border-bottom: 1px solid #c0261b;
+}
+.nk-photo {
+    height: 120px;
+    flex: 1;
+    min-width: 0;
+    background: #efefef;
+    object-fit: cover;
+    display: block;
+}
+.nk-muted {
+    color: #4a4543;
+}
+
+/* Shadows are removed above, so borders that Filament draws with rings are restored as real borders. */
+.fi-input-wrp,
+.fi-fo-file-upload .filepond--panel-root,
+.fi-fo-textarea textarea,
+.fi-checkbox-input {
+    border: 1px solid #727171 !important;
+}
+.fi-input-wrp:focus-within,
+.fi-fo-textarea textarea:focus {
+    outline: 2px solid #c0261b;
+    outline-offset: 1px;
+}
+.fi-section,
+.fi-ta-ctn,
+.fi-wi-stats-overview-stat,
+.fi-dropdown-panel,
+.fi-modal-window {
+    border: 1px solid #e6e2e0;
+}
+.fi-wi-stats-overview-stat {
+    background: #efefef;
+    border-color: #efefef;
+}
+
+/* Brand buttons: deep red fill, white text; outlined variant in deep red. */
+.fi-btn.fi-color-primary:not(.fi-outlined) {
+    background: #c0261b !important;
+    color: #fff !important;
+}
+.fi-btn.fi-color-primary:not(.fi-outlined):hover {
+    background: #a31f16 !important;
+}
+.fi-btn.fi-outlined.fi-color-primary {
+    border: 1px solid #c0261b !important;
+    color: #c0261b !important;
+    background: #fff !important;
+}
+.fi-btn:not(.fi-color) {
+    border: 1px solid #727171;
+}
+.fi-badge {
+    border: 0;
+}
+.fi-badge.fi-color-info {
+    background: #d6e6f7;
+    color: #1a3a5c;
+}
+.fi-badge.fi-color-danger {
+    background: #f9cdc9;
+    color: #7a1d14;
+}
+.fi-badge.fi-color-gray {
+    background: #efefef;
+    color: #4a4543;
+    border: 1px solid #727171;
+}
