@@ -1,0 +1,3 @@
+2026-11-11 | pending-review | surface: sales app + admin panel | axis: shape, type, surfaces | choice: Outfit, pill buttons, 20px cards on paper, red greeting panel on sales home, icon bottom nav | reason: owner asked to match insurance-nikkou-web.quantumtri.com; replaces flat/square rule from spec section 9
+2026-11-11 | rejected (self) | surface: sales app | axis: motion | choice: page-enter fade | reason: content started invisible in a hidden tab; forms must never render blank
+2026-11-11 | kept | surface: sales app + admin panel | axis: shape, type, surfaces | choice: Outfit, pill buttons, 20px cards on paper, red greeting panel on sales home, icon bottom nav | reason: owner confirmed "Ya, pertahankan"
