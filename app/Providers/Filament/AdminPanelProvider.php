@@ -9,9 +9,11 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\Support\Icons\Heroicon;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -35,6 +37,14 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(asset('images/logo-wordmark.png'))
             ->brandLogoHeight('20px')
             ->darkMode(false)
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
+            ->navigationItems([
+                NavigationItem::make('Terima pengembalian')
+                    ->url(fn (): string => route('sales.returns.create'))
+                    ->icon(Heroicon::OutlinedArrowUturnLeft)
+                    ->sort(35),
+            ])
             ->font('Outfit', provider: LocalFontProvider::class)
             ->renderHook(PanelsRenderHook::HEAD_END, fn (): string => Blade::render('@fonts'))
             ->colors([

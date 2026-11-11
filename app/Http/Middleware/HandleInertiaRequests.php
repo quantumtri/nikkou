@@ -49,7 +49,7 @@ class HandleInertiaRequests extends Middleware
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
             ],
-            'nav' => fn () => $user ? [
+            'nav' => fn () => $user && ! $user->isWarehouse() ? [
                 ['label' => 'Beranda', 'icon' => 'home', 'href' => route('sales.home'), 'active' => $request->routeIs('sales.home')],
                 ['label' => 'Pinjam', 'icon' => 'plus', 'href' => route('sales.loans.create'), 'active' => $request->routeIs('sales.loans.create')],
                 ['label' => 'Riwayat', 'icon' => 'history', 'href' => route('sales.loans.index'), 'active' => $request->routeIs('sales.loans.index', 'sales.loans.show')],

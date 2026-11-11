@@ -110,7 +110,7 @@ class LoanController extends Controller
     public function lookup(Request $request, UnitStatusService $status): JsonResponse
     {
         $code = strtoupper(trim((string) $request->query('code')));
-        $unit = Unit::query()->with(['type', 'components', 'activeLoan.customer'])->where('code', $code)->first();
+        $unit = Unit::query()->with(['type', 'components', 'activeLoan.customer', 'activeLoan.sales'])->where('code', $code)->first();
 
         if (! $unit) {
             return response()->json(['message' => 'Kode unit tidak ditemukan.'], 404);
@@ -126,10 +126,13 @@ class LoanController extends Controller
             'status_label' => $unit->statusLabel(),
             'location' => $unit->location,
             'components' => $unit->components->where('is_present', true)->pluck('name')->values(),
+            'component_names' => $unit->components->where('is_present', true)->pluck('name')->values(),
             'loanable' => $status->isLoanable($unit),
             'warning' => $status->isLoanable($unit) ? null : UnitNotLoanable::describe($unit, $loan),
             'active_loan' => $loan ? [
                 'id' => $loan->id,
+                'can_return' => $request->user()->can('processReturn', $loan),
+                'sales' => str($loan->sales?->name ?? '')->before(' ')->toString(),
                 'borrower' => $loan->borrowerName(),
                 'type_label' => $loan->type->label(),
                 'starts_on' => $loan->starts_on->locale('id')->translatedFormat('j M'),

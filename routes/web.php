@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\Sales\HomeController;
 use App\Http\Controllers\Sales\LoanController;
+use App\Http\Controllers\Sales\ReturnController;
 use App\Http\Controllers\UnitFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,10 +28,16 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/admin/labels/pdf', [LabelController::class, 'pdf'])->name('labels.pdf');
     Route::get('/admin/units/{unit}/qr.png', [LabelController::class, 'qr'])->name('labels.qr');
 
+    // Returns and unit lookup are shared by sales, admin and warehouse staff (spec section 2).
+    Route::prefix('sales')->name('sales.')->middleware('role:admin,sales,warehouse')->group(function () {
+        Route::get('/units/lookup', [LoanController::class, 'lookup'])->middleware('throttle:60,1')->name('units.lookup');
+        Route::get('/returns/create', [ReturnController::class, 'create'])->name('returns.create');
+        Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
+    });
+
     // Sales mobile app. Admins may use it too (spec section 2).
     Route::prefix('sales')->name('sales.')->middleware('role:admin,sales')->group(function () {
         Route::get('/', HomeController::class)->name('home');
-        Route::get('/units/lookup', [LoanController::class, 'lookup'])->middleware('throttle:60,1')->name('units.lookup');
         Route::get('/loans', [LoanController::class, 'index'])->name('loans.index');
         Route::get('/loans/create', [LoanController::class, 'create'])->name('loans.create');
         Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');

@@ -31,6 +31,7 @@ defineProps({
 
         <div class="mt-5 flex flex-col gap-3">
             <Link href="/sales/loans/create" class="btn-primary">Pinjamkan unit</Link>
+            <Link href="/sales/returns/create" class="btn-outline">Terima pengembalian</Link>
         </div>
 
         <div class="mt-8 flex items-center justify-between">

@@ -40,6 +40,7 @@ defineProps({
 
         <div class="mt-7 flex flex-col gap-3">
             <a :href="whatsappUrl" target="_blank" rel="noopener" class="btn-outline">Kirim ringkasan ke WhatsApp</a>
+            <Link v-if="loan.is_active" :href="`/sales/returns/create?code=${loan.unit_code}`" class="btn-outline">Terima pengembalian</Link>
             <Link href="/sales" class="btn-primary">Selesai</Link>
         </div>
     </SalesLayout>
