@@ -13,16 +13,16 @@
 @endphp
 
 <x-filament-panels::page>
-    <div style="display: flex; flex-direction: column; gap: 28px">
+    <div style="display: flex; flex-direction: column; gap: 24px">
         <div>
             <span class="nk-chip {{ $chip }}">{{ $unit->statusLabel() }}</span>
         </div>
 
-        <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start">
         @if ($label)
-            <section style="width: 300px; flex: none" aria-labelledby="unit-label">
+            <section class="nk-panel" style="width: 320px; flex: none" aria-labelledby="unit-label">
                 <h2 id="unit-label" class="nk-sec">Label QR / barcode</h2>
-                <div style="border: 1px solid #1a1a1a; padding: 16px">
+                <div class="nk-label" style="padding: 16px">
                     <div style="display: flex; gap: 16px; align-items: center">
                         <img src="{{ $label['qr'] }}" alt="QR {{ $unit->code }}" style="width: 130px; height: 130px; flex: none">
                         <div style="min-width: 0">
@@ -44,7 +44,7 @@
             </section>
         @endif
 
-        <section style="flex: 1; min-width: 320px" aria-labelledby="unit-data">
+        <section class="nk-panel" style="flex: 1; min-width: 320px" aria-labelledby="unit-data">
             <h2 id="unit-data" class="nk-sec">Data unit</h2>
             <div style="display: flex; gap: 40px; flex-wrap: wrap">
                 <dl style="flex: 1; min-width: 280px">
@@ -106,8 +106,8 @@
             <div class="nk-stat"><span>Label</span><strong>{{ $unit->label_printed_at ? 'Dicetak '.$date($unit->label_printed_at) : 'Belum dicetak' }}</strong></div>
         </div>
 
-        <div style="display: flex; gap: 40px; flex-wrap: wrap">
-            <section style="flex: 1; min-width: 300px" aria-labelledby="unit-history">
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start">
+            <section class="nk-panel" style="flex: 1; min-width: 300px" aria-labelledby="unit-history">
                 <h2 id="unit-history" class="nk-sec">Riwayat unit</h2>
                 @forelse ($unit->activityLogs as $log)
                     <div class="nk-tl @if (! str_starts_with($log->action, 'loan.') && $log->action !== 'unit.status_changed') nk-tl-muted @endif">
@@ -119,7 +119,7 @@
                 @endforelse
             </section>
 
-            <section style="flex: 1; min-width: 300px" aria-labelledby="unit-loans">
+            <section class="nk-panel" style="flex: 1; min-width: 300px" aria-labelledby="unit-loans">
                 <h2 id="unit-loans" class="nk-sec">Trial dan lead</h2>
                 @if ($unit->loans->isEmpty())
                     <p class="nk-muted">Unit ini belum pernah dipinjamkan.</p>

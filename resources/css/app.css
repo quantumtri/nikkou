@@ -3,59 +3,152 @@
 @source '../../storage/framework/views/*.php';
 @source '../js/**/*.vue';
 
-/* Nikkou brand: flat, square corners, no shadows (spec section 9). */
+/* Nikkou app style. Tokens and rules are locked in .tastemaker/style-lock.md. */
 @theme {
-    --font-sans: 'Helvetica Neue', Helvetica, Avenir, 'Noto Sans TC', sans-serif;
+    --font-sans: 'Outfit', system-ui, sans-serif;
 
     --color-nikkou-red: #e83828;
-    --color-nikkou-red-deep: #c0261b; /* small text and buttons */
+    --color-nikkou-red-deep: #c0261b; /* buttons and small text */
     --color-nikkou-red-ink: #7a1d14;
     --color-nikkou-coral: #f49c94;
     --color-nikkou-rose: #f9cdc9;
     --color-nikkou-blue: #86b3e0;
-    --color-nikkou-blue-tint: #d6e6f7;
-    --color-nikkou-blue-ink: #1a3a5c;
+    --color-nikkou-blue-tint: #dce9f6;
+    --color-nikkou-blue-ink: #0b2540;
     --color-nikkou-mist: #efefef;
+    --color-nikkou-paper: #faf8f7;
     --color-nikkou-gray: #727171;
+    --color-nikkou-field: #8a8482; /* input borders: 3.7:1 on white */
     --color-nikkou-ink: #1a1a1a;
     --color-nikkou-muted: #4a4543;
     --color-nikkou-line: #e6e2e0;
 
-    --radius-xs: 0;
-    --radius-sm: 0;
-    --radius-md: 0;
-    --radius-lg: 0;
-    --radius-xl: 0;
+    --radius-field: 14px;
+    --radius-card: 20px;
+    --radius-panel: 28px;
 }
 
 @layer base {
+    html {
+        background: var(--color-nikkou-paper);
+    }
+
     body {
-        @apply bg-white font-sans text-sm leading-normal text-nikkou-ink;
+        @apply font-sans text-[15px] leading-normal text-nikkou-ink antialiased;
+        background: var(--color-nikkou-paper);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-nikkou-red-deep);
+        outline-offset: 2px;
+    }
+
+    h1,
+    h2 {
+        text-wrap: balance;
     }
 }
 
 @layer components {
     /* Touch targets stay at 44px or more on phones. */
+    .btn-primary,
+    .btn-outline {
+        @apply flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-6 text-base font-semibold;
+        transition:
+            background-color 150ms ease-out,
+            border-color 150ms ease-out,
+            transform 150ms ease-out;
+    }
     .btn-primary {
-        @apply flex min-h-[52px] w-full items-center justify-center bg-nikkou-red-deep text-base text-white disabled:opacity-60;
+        @apply bg-nikkou-red-deep text-white;
     }
     .btn-outline {
-        @apply flex min-h-[52px] w-full items-center justify-center border border-nikkou-red-deep bg-white text-base text-nikkou-red-deep;
+        @apply border-[1.5px] border-nikkou-red-deep bg-white text-nikkou-red-deep;
     }
+    .btn-primary:disabled,
+    .btn-outline:disabled {
+        @apply cursor-not-allowed bg-nikkou-mist text-nikkou-gray;
+        border-color: transparent;
+    }
+    .btn-primary:active:not(:disabled),
+    .btn-outline:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+    @media (hover: hover) and (pointer: fine) {
+        .btn-primary:hover:not(:disabled) {
+            background-color: var(--color-nikkou-red-ink);
+        }
+        .btn-outline:hover:not(:disabled) {
+            background-color: var(--color-nikkou-paper);
+        }
+    }
+
+    .page-title {
+        @apply text-[28px] leading-tight font-semibold tracking-[-0.01em] text-nikkou-ink;
+    }
+    .back-link {
+        @apply inline-flex min-h-[44px] items-center gap-1 text-sm font-medium text-nikkou-red-deep;
+    }
+
     .field-label {
-        @apply mt-3.5 mb-1 block text-xs text-nikkou-muted;
+        @apply mt-4 mb-1.5 block text-[13px] font-medium text-nikkou-muted;
     }
     .field-input {
-        @apply box-border min-h-[46px] w-full border border-nikkou-gray bg-white px-3 py-2.5 text-nikkou-ink;
+        @apply box-border min-h-[50px] w-full rounded-[14px] border border-nikkou-field bg-white px-4 py-3 text-nikkou-ink;
+        transition: border-color 150ms ease-out;
+    }
+    .field-input::placeholder {
+        color: var(--color-nikkou-gray);
+    }
+    .field-input:focus-visible {
+        border-color: var(--color-nikkou-red-deep);
+        outline-offset: 0;
     }
     .field-error {
-        @apply mt-1 text-xs text-nikkou-red-ink;
+        @apply mt-1.5 text-[13px] text-nikkou-red-ink;
     }
+
+    /* Numbered form section: <h2 class="section-title"><span class="step">1</span>Title</h2> */
     .section-title {
-        @apply mt-7 mb-1 border-b border-nikkou-ink pb-1.5 text-xs tracking-[0.08em] text-nikkou-red-deep;
+        @apply mt-8 mb-1 flex items-center gap-2.5 text-[17px] font-semibold text-nikkou-ink;
     }
+    .section-title:first-child {
+        @apply mt-0;
+    }
+    .step {
+        @apply flex h-7 w-7 flex-none items-center justify-center rounded-full bg-nikkou-rose text-[13px] font-semibold text-nikkou-red-ink;
+    }
+
+    .card {
+        @apply rounded-[20px] border border-nikkou-line bg-white p-4;
+    }
+    .tile {
+        @apply rounded-[20px] bg-nikkou-paper p-4;
+    }
+    .notice {
+        @apply rounded-[20px] bg-nikkou-blue-tint px-4 py-3 text-nikkou-blue-ink;
+    }
+    .alert {
+        @apply rounded-[20px] bg-nikkou-rose px-4 py-3 text-nikkou-red-ink;
+    }
+
+    /* Two-option switch (loan type). */
+    .segmented {
+        @apply flex gap-1 rounded-full bg-nikkou-mist p-1;
+    }
+    .segmented > button {
+        @apply flex min-h-[44px] flex-1 items-center justify-center rounded-full text-[15px] font-medium text-nikkou-muted;
+        transition:
+            background-color 150ms ease-out,
+            color 150ms ease-out;
+    }
+    .segmented > button[aria-checked='true'],
+    .segmented > button[aria-selected='true'] {
+        @apply bg-nikkou-red-deep text-white;
+    }
+
     .chip {
-        @apply inline-block px-2 py-0.5 text-xs;
+        @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap;
     }
     .chip-ok {
         @apply bg-nikkou-blue-tint text-nikkou-blue-ink;
@@ -64,6 +157,28 @@
         @apply bg-nikkou-rose text-nikkou-red-ink;
     }
     .chip-neutral {
-        @apply border border-nikkou-gray bg-nikkou-mist text-nikkou-muted;
+        @apply bg-nikkou-mist text-nikkou-muted;
+    }
+
+    .check-row {
+        @apply mt-3 flex min-h-[44px] cursor-pointer items-start gap-3 leading-normal;
+    }
+    .check-row input {
+        @apply mt-0.5 h-[22px] w-[22px] flex-none;
+        accent-color: var(--color-nikkou-red-deep);
+    }
+
+    .list-row {
+        @apply flex min-h-[64px] items-center justify-between gap-3 py-3;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

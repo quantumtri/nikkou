@@ -13,40 +13,42 @@ defineProps({
 <template>
     <Head title="Beranda" />
     <SalesLayout>
-        <h1 class="text-[28px] leading-snug text-nikkou-red-deep">Halo, {{ firstName }}</h1>
-        <div class="mt-1 text-nikkou-muted">{{ today }}</div>
+        <section class="rounded-[28px] bg-nikkou-red-deep p-5 text-white">
+            <h1 class="text-[28px] leading-tight font-semibold tracking-[-0.01em]">Halo, {{ firstName }}</h1>
+            <p class="mt-1 text-sm">{{ today }}</p>
 
-        <div class="mt-5 flex gap-3">
-            <div class="flex-1 bg-nikkou-mist p-3.5">
-                <div class="text-[32px] leading-tight">{{ stats.active }}</div>
-                <div class="mt-1 text-xs text-nikkou-muted">Unit sedang dipinjamkan</div>
+            <div class="mt-5 flex gap-3">
+                <div class="flex-1 rounded-[20px] bg-white p-4 text-nikkou-ink">
+                    <div class="text-[32px] leading-none font-semibold tabular-nums">{{ stats.active }}</div>
+                    <div class="mt-2 text-xs text-nikkou-muted">Unit sedang dipinjamkan</div>
+                </div>
+                <div class="flex-1 rounded-[20px] bg-nikkou-rose p-4 text-nikkou-red-ink">
+                    <div class="text-[32px] leading-none font-semibold tabular-nums">{{ stats.due_today }}</div>
+                    <div class="mt-2 text-xs">Harus kembali hari ini</div>
+                </div>
             </div>
-            <div class="flex-1 bg-nikkou-rose p-3.5 text-nikkou-red-ink">
-                <div class="text-[32px] leading-tight">{{ stats.due_today }}</div>
-                <div class="mt-1 text-xs">Harus kembali hari ini</div>
-            </div>
-        </div>
+        </section>
 
         <div class="mt-5 flex flex-col gap-3">
             <Link href="/sales/loans/create" class="btn-primary">Pinjamkan unit</Link>
         </div>
 
-        <div class="mt-7 mb-2 flex items-baseline justify-between">
-            <h2 class="text-lg">Peminjaman saya</h2>
-            <Link href="/sales/loans" class="border-b border-nikkou-red-deep text-sm text-nikkou-red-deep">Lihat semua</Link>
+        <div class="mt-8 flex items-center justify-between">
+            <h2 class="text-[17px] font-semibold">Peminjaman saya</h2>
+            <Link href="/sales/loans" class="inline-flex min-h-[44px] items-center text-sm font-medium text-nikkou-red-deep">Lihat semua</Link>
         </div>
 
-        <ul class="border-t border-nikkou-ink">
-            <li v-for="loan in loans" :key="loan.id" class="border-b border-nikkou-line">
-                <Link :href="`/sales/loans/${loan.id}`" class="flex min-h-[56px] justify-between gap-3 py-3">
+        <ul class="card divide-y divide-nikkou-line py-1">
+            <li v-for="loan in loans" :key="loan.id">
+                <Link :href="`/sales/loans/${loan.id}`" class="list-row">
                     <div>
-                        <div>{{ loan.borrower }}</div>
+                        <div class="font-medium">{{ loan.borrower }}</div>
                         <div class="text-xs text-nikkou-muted">{{ loan.unit_code }} | {{ loan.type_label }} | Kembali {{ loan.due_on }}</div>
                     </div>
-                    <span class="chip self-start" :class="loan.is_active ? 'chip-bad' : 'chip-neutral'">{{ loan.status_label }}</span>
+                    <span class="chip" :class="loan.is_active ? 'chip-bad' : 'chip-neutral'">{{ loan.status_label }}</span>
                 </Link>
             </li>
-            <li v-if="!loans.length" class="border-b border-nikkou-line py-4 text-nikkou-muted">Belum ada peminjaman.</li>
+            <li v-if="!loans.length" class="py-5 text-center text-nikkou-muted">Belum ada peminjaman. Mulai dari tombol "Pinjamkan unit".</li>
         </ul>
     </SalesLayout>
 </template>

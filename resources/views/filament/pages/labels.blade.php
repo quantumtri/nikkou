@@ -7,8 +7,8 @@
 @endphp
 
 <x-filament-panels::page>
-    <div style="display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
-        <form wire:submit="printLabels" style="flex: 1; min-width: 320px">
+    <div style="display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start">
+        <form wire:submit="printLabels" class="nk-panel" style="flex: 1; min-width: 320px">
             {{ $this->form }}
 
             <div style="display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap">
@@ -21,7 +21,7 @@
             </div>
         </form>
 
-        <section style="flex: 1; min-width: 320px" aria-labelledby="label-preview">
+        <section class="nk-panel" style="flex: 1; min-width: 320px" aria-labelledby="label-preview">
             <h2 id="label-preview" class="nk-sec">Pratinjau</h2>
 
             @if ($labels->isEmpty())
@@ -30,7 +30,7 @@
                 <div style="display: flex; flex-wrap: wrap; gap: 16px">
                     @foreach ($labels as $label)
                         <div
-                            style="width: {{ $width * $scale }}px; height: {{ $height * $scale }}px; border: 1px solid #1a1a1a; padding: {{ 2 * $scale }}px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px; background: #fff"
+                            class="nk-label" style="width: {{ $width * $scale }}px; height: {{ $height * $scale }}px; padding: {{ 2 * $scale }}px; box-sizing: border-box; display: flex; flex-direction: column; gap: 4px"
                         >
                             <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-height: 0">
                                 @if ($label['qr'])
