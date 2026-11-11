@@ -1,6 +1,7 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, usePage, useForm } from '@inertiajs/vue3';
 
+const page = usePage();
 const form = useForm({ email: '', password: '', remember: false });
 
 const submit = () => form.post('/login', { onFinish: () => form.reset('password') });
@@ -12,6 +13,8 @@ const submit = () => form.post('/login', { onFinish: () => form.reset('password'
         <img src="/images/logo-wordmark.png" alt="NIKKOU" width="96" height="24" class="block h-6 w-auto" />
         <h1 class="page-title mt-10">Masuk</h1>
         <p class="mt-1 text-nikkou-muted">Gunakan akun yang diberikan admin.</p>
+
+        <div v-if="page.props.flash?.success" role="status" class="notice mt-5">{{ page.props.flash.success }}</div>
 
         <form class="mt-4" novalidate @submit.prevent="submit">
             <label for="email" class="field-label">Email</label>

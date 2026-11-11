@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\UserRole;
+use App\Filament\Resources\Units\UnitResource;
 use App\Filament\Widgets\DashboardStats;
 use App\Filament\Widgets\LeadFunnel;
 use App\Filament\Widgets\SalesTable;
@@ -21,6 +22,19 @@ class Dashboard extends BaseDashboard
     protected static ?string $title = 'Dasbor';
 
     protected ?string $subheading = 'Ringkasan leads, peminjaman, dan unit.';
+
+    /** Staf gudang have no dashboard (spec section 2): the panel root sends them to the inventory. */
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->isAdmin() ?? false;
+    }
+
+    public function mount(): void
+    {
+        if (! auth()->user()->isAdmin()) {
+            $this->redirect(UnitResource::getUrl('index'));
+        }
+    }
 
     public function filtersForm(Schema $schema): Schema
     {

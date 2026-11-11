@@ -57,9 +57,11 @@ it('keeps sales out of the admin panel', function () {
     $this->actingAs(User::factory()->sales()->create())->get('/admin')->assertForbidden();
 });
 
-it('lets admin and warehouse into the admin panel', function (string $role) {
-    $this->actingAs(User::factory()->{$role}()->create())->get('/admin')->assertOk();
-})->with(['admin', 'warehouse']);
+it('lets admin and warehouse into the admin panel', function () {
+    $this->actingAs(User::factory()->admin()->create())->get('/admin')->assertOk();
+    $this->actingAs(User::factory()->warehouse()->create())->get('/admin')->assertRedirect('/admin/units');
+    $this->actingAs(User::factory()->warehouse()->create())->get('/admin/units')->assertOk();
+});
 
 it('shows a sales only their own loans on the home page', function () {
     $dewi = User::factory()->sales()->create();
@@ -79,4 +81,21 @@ it('stores passwords hashed', function () {
 
     expect($user->password)->not->toBe('rahasia-123')
         ->and(Hash::check('rahasia-123', $user->password))->toBeTrue();
+});
+
+it('leaves Inertia with a full page load when an admin signs in, so the panel is not shown in a modal', function () {
+    $admin = User::factory()->admin()->create();
+
+    $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => ''])
+        ->post('/login', ['email' => $admin->email, 'password' => 'password'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', '/admin');
+});
+
+it('keeps sales inside Inertia when they sign in', function () {
+    $sales = User::factory()->sales()->create();
+
+    $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => ''])
+        ->post('/login', ['email' => $sales->email, 'password' => 'password'])
+        ->assertRedirect(route('sales.home'));
 });

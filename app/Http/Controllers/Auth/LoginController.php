@@ -22,7 +22,7 @@ class LoginController extends Controller
         return Inertia::render('Auth/Login');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): \Symfony\Component\HttpFoundation\Response
     {
         $credentials = $request->validate([
             'email' => ['required', 'string', 'email'],
@@ -47,7 +47,15 @@ class LoginController extends Controller
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
-        return redirect()->intended(self::homeFor($request->user()));
+        $target = $request->session()->pull('url.intended', self::homeFor($request->user()));
+
+        // The admin panel is a Filament (Livewire) app, not an Inertia page. An Inertia visit to it
+        // would render the panel inside a modal over the login form, so leave Inertia with a full page load.
+        if (str_starts_with(parse_url($target, PHP_URL_PATH) ?? '', '/admin')) {
+            return Inertia::location($target);
+        }
+
+        return redirect()->to($target);
     }
 
     public function destroy(Request $request): RedirectResponse

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\InviteController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\Sales\HomeController;
@@ -11,6 +12,12 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'create'])->name('login');
     Route::post('/login', [LoginController::class, 'store']);
+});
+
+// Set-password links (invitations and resets). Signed, single use, and only the latest link works.
+Route::middleware(['signed', 'throttle:20,1'])->group(function () {
+    Route::get('/invite/{user}', [InviteController::class, 'show'])->name('invite.show');
+    Route::post('/invite/{user}', [InviteController::class, 'store'])->name('invite.store');
 });
 
 Route::middleware(['auth', 'active'])->group(function () {

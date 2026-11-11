@@ -6,6 +6,7 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Resources\Loans\LoanResource;
 use App\Filament\Resources\Loans\Pages\ListLoans;
 use App\Filament\Resources\Loans\Tables\LoansTable;
+use App\Filament\Resources\Units\UnitResource;
 use App\Filament\Widgets\DashboardStats;
 use App\Filament\Widgets\LeadFunnel;
 use App\Filament\Widgets\LoanStatsOverview;
@@ -95,9 +96,10 @@ it('counts overdue loans and units on the loan summary cards', function () {
         ->assertSee('Perlu ditindaklanjuti');
 });
 
-it('renders the dashboard for admins and warehouse but not sales', function () {
+it('shows the dashboard to admins only, sends warehouse to the inventory and blocks sales', function () {
     $this->actingAs($this->admin)->get(Dashboard::getUrl())->assertOk()->assertSee('Dasbor')->assertSeeLivewire(SalesTable::class)->assertSeeLivewire(DashboardStats::class)->assertSeeLivewire(LeadFunnel::class);
-    $this->actingAs(User::factory()->warehouse()->create())->get(Dashboard::getUrl())->assertOk();
+    // Warehouse staff have no dashboard: the panel root sends them to the inventory.
+    $this->actingAs(User::factory()->warehouse()->create())->get(Dashboard::getUrl())->assertRedirect(UnitResource::getUrl('index'));
     $this->actingAs($this->dewi)->get(Dashboard::getUrl())->assertForbidden();
 });
 
