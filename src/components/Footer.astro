@@ -1,12 +1,16 @@
 ---
 import { Image } from 'astro:assets';
 import logo from '../assets/logo-wordmark.png';
-import { cfg, pick, waLink } from '../lib/content.js';
+import { cfg, pick, waLinkFor } from '../lib/content.js';
+import { getT, localePath, loc } from '../i18n/index.js';
 
-const { home = false } = Astro.props;
-const p = home ? '' : '/';
-const address = pick(cfg.address, 'Alamat kantor, kota');
-const hours = pick(cfg.hours, 'Jam operasional');
+const { home = false, lang = 'id' } = Astro.props;
+const t = getT(lang);
+const f = t.common.footer;
+const waLink = waLinkFor(lang);
+const p = home ? '' : localePath(lang, '/');
+const address = pick(loc(cfg.address, lang), 'Alamat kantor, kota');
+const hours = pick(loc(cfg.hours, lang), 'Jam operasional');
 const company = cfg.company ?? cfg.brand;
 ---
 <footer class="foot">
@@ -19,20 +23,21 @@ const company = cfg.company ?? cfg.brand;
         )}
       </div>
       <div class="foot-col">
-        <b>Halaman</b>
-        <a class="footlink" href={`${p}#teknologi`}>Teknologi</a>
-        <a class="footlink" href={`${p}#produk`}>Produk</a>
-        <a class="footlink" href={`${p}#cara-pakai`}>Cara pakai</a>
-        <a class="footlink" href={`${p}#faq`}>FAQ</a>
+        <b>{f.pages}</b>
+        <a class="footlink" href={`${p}#teknologi`}>{f.tech}</a>
+        <a class="footlink" href={`${p}#produk`}>{f.products}</a>
+        <a class="footlink" href={`${p}#cara-pakai`}>{f.usage}</a>
+        <a class="footlink" href={`${p}#faq`}>{f.faq}</a>
+        <a class="footlink" href={localePath(lang, '/testimoni')}>{f.testimonials}</a>
       </div>
       <div class="foot-col">
-        <b>Bantuan</b>
+        <b>{f.help}</b>
         <a class="footlink" href={waLink} target="_blank" rel="noopener">WhatsApp</a>
       </div>
     </div>
     <div class="foot-bottom">
-      <div>Produk ini bukan obat dan tidak menggantikan saran dokter.</div>
-      <div>&copy; 2026 {company}. Hak cipta dilindungi.</div>
+      <div>{f.disclaimer}</div>
+      <div>{f.copy(company)}</div>
     </div>
   </div>
 </footer>

@@ -1,0 +1,470 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import biru from '../assets/inhaler-biru-cutout.png';
+import { cfg, preview, waBase, formEndpoint } from '../lib/content.js';
+import { getT, rich, loc, localePath } from '../i18n/index.js';
+
+const { lang = 'id' } = Astro.props;
+const T = getT(lang);
+const t = T.tpage;
+const f = t.form;
+const r = t.reward;
+const rewardOn = cfg.testimonialReward?.enabled === true;
+const rewardTerms = loc(cfg.testimonialReward?.terms, lang);
+const MIN = 40;
+const MAX = 800;
+
+const youtubeId = (url) => {
+  const m = String(url || '').match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+};
+
+// Only real, permitted testimonials from site.config.mjs. Preview builds add clearly marked placeholders.
+const real = cfg.testimonials.map((x) => ({
+  type: ['text', 'photo', 'video'].includes(x.type) ? x.type : 'text',
+  quote: loc(x.quote, lang),
+  name: x.name,
+  city: x.city,
+  duration: x.duration,
+  product: x.product,
+  rating: Number(x.rating) || 0,
+  image: x.image,
+  poster: x.poster,
+  videoUrl: x.videoUrl,
+}));
+const longStory = '[Cerita lengkap pengguna: latar belakang, alasan mencoba, cara memakai sehari-hari, dan kesan setelah beberapa waktu. Isi dengan cerita asli beserta izin tertulis dari penulisnya.]';
+const placeholders = preview
+  ? [['video'], ['text'], ['photo'], ['text', longStory], ['photo'], ['text'], ['photo'], ['video']].map(([type, quote], i) => ({
+      type,
+      quote: quote ?? `[Testimoni asli pengguna ${i + 1}, dengan izin tertulis]`,
+      name: '[Nama]', city: '[Kota]', duration: '[Lama pemakaian]', rating: 5, image: null, videoUrl: null, placeholder: true,
+    }))
+  : [];
+const items = real.length ? real : placeholders;
+
+// Featured mosaic: a mix of video, photo and story. Everything else goes in the list below.
+const byType = (ty) => items.filter((x) => x.type === ty);
+const isStory = (x) => x.type === 'text' && (x.quote || '').length >= 180;
+const texts = byType('text');
+const story = texts.find(isStory);
+const quotes = texts.filter((x) => x !== story);
+const vids = byType('video');
+const pics = byType('photo');
+const featured = [vids[0], quotes[0], pics[0], story, pics[1]].filter(Boolean);
+const rest = items.filter((x) => !featured.includes(x));
+const kindOf = (x) => (x.type === 'video' ? 'video' : x.type === 'photo' ? 'photo' : isStory(x) ? 'story' : 'quote');
+const rated = real.filter((x) => x.rating > 0);
+const avg = rated.length ? (rated.reduce((a, x) => a + x.rating, 0) / rated.length).toFixed(1) : null;
+const firstSentence = (q) => {
+  const m = String(q).match(/^.+?[.!?。！？](\s|$)/);
+  return m ? m[0].trim() : q;
+};
+
+const star = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>';
+const waText = 'Testimoni baru';
+---
+<Base lang={lang} title={`${t.title} | Nikkou`} description={t.description}>
+  <!-- Hero -->
+  <section class="sec rose thero">
+    <div class="wrap thero-in">
+      <div class="col" style="gap:18px">
+        <div class="eyebrow">{t.eyebrow}</div>
+        <h1 class="h2" style="color:var(--darkest)" set:html={rich(t.h1)} />
+        <p class="lead" style="color:#3a2220">{t.lead}</p>
+        {real.length > 0 && <div class="tsum">{t.summary(real.length, avg)}</div>}
+        {rewardOn && (
+          <div class="tgift">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/><path d="M12 8c-1-3-5-4-5-1.500S10 8 12 8zm0 0c1-3 5-4 5-1.500S14 8 12 8z"/></svg>
+            <span><strong>{r.badge}.</strong> {r.heroLine}</span>
+          </div>
+        )}
+        <div class="btn-row"><a class="btn btn-deep" href="#bagikan">{t.shareCta}</a></div>
+      </div>
+      <div class="thero-art" aria-hidden="true">
+        <div class="art-sky"></div>
+        <div class="art-dot"></div>
+        <div class="art-arch"><Image src={biru} alt="" width={520} loading="eager" /></div>
+        <div class="art-chip c1"><svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>{t.chips[0]}</div>
+        <div class="art-chip c2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="3"/><circle cx="12" cy="13" r="3.5"/><path d="M8 6l1.5-2h5L16 6"/></svg>{t.chips[1]}</div>
+        <div class="art-chip c3"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 18v-5.5C4 8.4 6.6 6 10 6v2.6c-1.9.2-3 1.4-3 3.4h3V18H4zm10 0v-5.5C14 8.4 16.600 6 20 6v2.600c-1.900.2-3 1.400-3 3.400h3V18h-6z"/></svg>{t.chips[2]}</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured mosaic -->
+  {featured.length > 0 && (
+    <section class="sec" style="padding-bottom:40px">
+      <div class="wrap col" style="gap:36px">
+        <h2 class="h2" set:html={rich(t.featuredH2)} />
+        <div class="bento">
+          {featured.map((x) => {
+            const kind = kindOf(x);
+            const yt = kind === 'video' ? youtubeId(x.videoUrl) : null;
+            const who = x.city ? `${x.name}, ${x.city}` : x.name;
+            const meta = [x.product, x.duration && `${t.uses}: ${x.duration}`].filter(Boolean).join(' · ');
+            const stars = x.rating > 0 ? <span class="stars" role="img" aria-label={t.ratingLabel(x.rating)}><span set:html={star.repeat(x.rating)} /></span> : null;
+            return (
+              <article class={`bt bt-${kind}`}>
+                {kind === 'video' && (
+                  <>
+                    <div class="bt-stage" data-yt={yt ?? ''} data-title={t.videoTitle(x.name)}>
+                      {x.videoUrl && !yt && !x.placeholder
+                        ? <video src={x.videoUrl} poster={x.poster} controls preload="none" title={t.videoTitle(x.name)}></video>
+                        : (
+                          <>
+                            {x.poster && <img src={x.poster} alt="" loading="lazy" />}
+                            <button type="button" class="play" aria-label={t.play} disabled={x.placeholder || !yt}>
+                              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.500v13l11-6.500z" fill="currentColor"/></svg>
+                            </button>
+                            {x.placeholder && <span class="ph-label">[Video testimoni]</span>}
+                          </>
+                        )}
+                    </div>
+                    <div class="bt-cap">
+                      {x.quote && <p class="bt-q">“{x.quote}”</p>}
+                      <div class="bt-who"><b>{who}</b>{meta && <span>{meta}</span>}</div>
+                    </div>
+                  </>
+                )}
+                {kind === 'photo' && (
+                  <>
+                    {x.image && !x.placeholder
+                      ? <img class="bt-img" src={x.image} alt={t.photoAlt(x.name)} loading="lazy" width="800" height="600" />
+                      : <div class="bt-img bt-ph" role="img" aria-label={t.photoAlt(x.name)}><span class="ph-label">[Foto pengguna]</span></div>}
+                    <div class="bt-cap over">
+                      {stars}
+                      {x.quote && <p class="bt-q">“{x.quote}”</p>}
+                      <div class="bt-who"><b>{who}</b>{meta && <span>{meta}</span>}</div>
+                    </div>
+                  </>
+                )}
+                {kind === 'quote' && (
+                  <div class="bt-inner">
+                    <span class="qmark" aria-hidden="true">“</span>
+                    <p class="bt-big">{x.quote}</p>
+                    <div class="bt-foot">{stars}<div class="bt-who"><b>{who}</b>{meta && <span>{meta}</span>}</div></div>
+                  </div>
+                )}
+                {kind === 'story' && (
+                  <div class="bt-inner story">
+                    <div class="story-lead">
+                      <span class="qmark" aria-hidden="true">“</span>
+                      <p class="bt-pull it">{firstSentence(x.quote)}</p>
+                    </div>
+                    <div class="story-body">
+                      <p>{x.quote.slice(firstSentence(x.quote).length).trim() || x.quote}</p>
+                      <div class="bt-foot">{stars}<div class="bt-who"><b>{who}</b>{meta && <span>{meta}</span>}</div></div>
+                    </div>
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Empty state (no real testimonials yet) -->
+  {items.length === 0 && (
+    <section class="sec" style="padding-bottom:40px">
+      <div class="wrap">
+        <div class="tempty big">
+          <b>{t.emptyTitle}</b>
+          <span>{t.emptyText}</span>
+          <div><a class="btn btn-deep" href="#bagikan">{t.shareCta}</a></div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- List of the rest -->
+  {rest.length > 0 && (
+    <section class="sec paper" style="padding-top:64px;padding-bottom:64px">
+      <div class="wrap col" style="gap:28px">
+        <h2 class="h2" set:html={rich(t.listH2)} />
+        <div class="tfilters" role="group" aria-label={t.filterLabel}>
+          {['all', 'text', 'photo', 'video'].map((k, i) => (
+            <button type="button" class="tfilter" data-filter={k} aria-pressed={i === 0 ? 'true' : 'false'}>{t.filters[k]}</button>
+          ))}
+        </div>
+
+        <div class="tgrid" id="tgrid">
+          {rest.map((x) => {
+            const yt = x.type === 'video' ? youtubeId(x.videoUrl) : null;
+            const who = x.city ? `${x.name}, ${x.city}` : x.name;
+            return (
+              <article class="tcard" data-type={x.type}>
+                {x.type === 'photo' && (
+                  x.image && !x.placeholder
+                    ? <img class="tmedia" src={x.image} alt={t.photoAlt(x.name)} loading="lazy" width="640" height="480" />
+                    : <div class="tmedia tmedia-ph" role="img" aria-label={t.photoAlt(x.name)}>[Foto pengguna]</div>
+                )}
+                {x.type === 'video' && (
+                  yt
+                    ? <div class="tmedia tvideo"><iframe src={`https://www.youtube-nocookie.com/embed/${yt}`} title={t.videoTitle(x.name)} loading="lazy" allow="encrypted-media; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+                    : x.videoUrl && !x.placeholder
+                      ? <video class="tmedia tvideo" src={x.videoUrl} controls preload="none" title={t.videoTitle(x.name)}></video>
+                      : <div class="tmedia tmedia-ph tvideo" role="img" aria-label={t.videoTitle(x.name)}>[Video testimoni]</div>
+                )}
+                <div class="tbody">
+                  <div class="tmeta-row">
+                    <span class="ttype">{t.types[x.type]}</span>
+                    {x.rating > 0 && <span class="stars" role="img" aria-label={t.ratingLabel(x.rating)}><span set:html={star.repeat(x.rating)} /></span>}
+                  </div>
+                  {x.quote && <p class="tquote">{x.quote}</p>}
+                  <div class="who">
+                    <div class="avatar" aria-hidden="true"></div>
+                    <div><b>{who}</b>{(x.duration || x.product) && <span>{[x.product, x.duration && `${t.uses}: ${x.duration}`].filter(Boolean).join(' · ')}</span>}</div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div class="tempty" id="tempty" hidden>
+          <b id="tempty-title">{t.emptyFiltered}</b>
+          <span id="tempty-text"></span>
+        </div>
+
+        <div class="disclaimer" style="background:#fff">{t.disclaimer}{rewardOn && <> {r.disclosure}</>}</div>
+      </div>
+    </section>
+  )}
+  {rest.length === 0 && (
+    <section class="sec" style="padding-top:0;padding-bottom:48px">
+      <div class="wrap"><div class="disclaimer">{t.disclaimer}{rewardOn && <> {r.disclosure}</>}</div></div>
+    </section>
+  )}
+
+  <section class="sec paper" id="bagikan">
+    <div class="wrap tform-wrap">
+      <div class="col" style="gap:16px">
+        <h2 class="h2" set:html={rich(f.h2)} />
+        <p class="lead">{f.intro}</p>
+        {rewardOn && (
+          <div class="rewardcard">
+            <div class="rc-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/><path d="M12 8c-1-3-5-4-5-1.500S10 8 12 8zm0 0c1-3 5-4 5-1.500S14 8 12 8z"/></svg>
+              <b>{r.cardTitle}</b>
+            </div>
+            <p>{r.cardText}</p>
+            <p class="rc-how">{r.how}</p>
+            {rewardTerms && <p class="rc-terms"><strong>{r.terms}</strong> {rewardTerms}</p>}
+          </div>
+        )}
+        <div class="tsteps">
+          <b>{t.stepsH}</b>
+          <ol>
+            {t.steps.map((st, i) => (
+              <li><span class="n">{i + 1}</span><div><strong>{st.t}</strong><span>{st.d}</span></div></li>
+            ))}
+          </ol>
+        </div>
+        <div class="note-box"><p>{f.guide}</p></div>
+        <p class="tprivacy">{f.privacy}</p>
+      </div>
+
+      <form
+        class="tform"
+        id="tform"
+        novalidate
+        data-endpoint={formEndpoint ?? ''}
+        data-wa={waBase}
+        data-wa-prefix={waText}
+        data-lang={lang}
+        data-min={MIN}
+        data-max={MAX}
+        data-claim-wa-text={JSON.stringify(r.waText('{{name}}'))}
+        data-msg={JSON.stringify({ sending: f.sending, success: f.success, successWa: f.successWa, error: f.error, invalid: f.invalid, submit: f.submit })}
+      >
+        <div class="frow">
+          <div class="field">
+            <label for="f-name">{f.name} <small>({f.required})</small></label>
+            <input id="f-name" name="name" type="text" required maxlength="80" autocomplete="name" placeholder={f.namePh} />
+          </div>
+          <div class="field">
+            <label for="f-city">{f.city} <small>({f.required})</small></label>
+            <input id="f-city" name="city" type="text" required maxlength="80" autocomplete="address-level2" placeholder={f.cityPh} />
+          </div>
+        </div>
+        <div class="frow">
+          <div class="field">
+            <label for="f-product">{f.product}</label>
+            <select id="f-product" name="product">
+              {Object.entries(f.products).map(([v, label]) => <option value={v}>{label}</option>)}
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-duration">{f.duration} <small>({f.optional})</small></label>
+            <input id="f-duration" name="duration" type="text" maxlength="60" placeholder={f.durationPh} />
+          </div>
+        </div>
+
+        <fieldset class="field rating">
+          <legend>{f.rating} <small>({f.required})</small></legend>
+          <div class="rate">
+            {[5, 4, 3, 2, 1].map((n) => (
+              <>
+                <input type="radio" id={`r${n}`} name="rating" value={n} required />
+                <label for={`r${n}`} title={t.ratingLabel(n)}><span class="sr">{t.ratingLabel(n)}</span><span set:html={star} /></label>
+              </>
+            ))}
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="f-story">{f.story} <small>({f.required})</small></label>
+          <textarea id="f-story" name="story" rows="6" required minlength={MIN} maxlength={MAX} placeholder={f.storyPh} aria-describedby="story-hint"></textarea>
+          <small id="story-hint">{f.storyHint(MIN, MAX)} <span id="story-count" aria-hidden="true">0</span>/{MAX}</small>
+        </div>
+
+        <div class="field">
+          <label for="f-media">{f.media} <small>({f.optional})</small></label>
+          <input id="f-media" name="media" type="url" inputmode="url" placeholder={f.mediaPh} aria-describedby="media-hint" />
+          <small id="media-hint">{f.mediaHint}</small>
+        </div>
+
+        <div class="field">
+          <label for="f-contact">{f.contact} <small>({f.required})</small></label>
+          <input id="f-contact" name="contact" type="text" required maxlength="120" autocomplete="email" placeholder={f.contactPh} aria-describedby="contact-hint" />
+          <small id="contact-hint">{f.contactHint}</small>
+        </div>
+
+        <label class="check"><input type="checkbox" name="consent" value="yes" required /><span>{f.consent}</span></label>
+        <label class="check"><input type="checkbox" name="genuine" value="yes" required /><span>{f.genuine}</span></label>
+
+        {rewardOn && (
+          <label class="check claim"><input type="checkbox" name="claim" value="yes" /><span><strong>{r.claimLabel}</strong><small>{r.claimHint}</small></span></label>
+        )}
+
+        <!-- Honeypot: real visitors never see or fill this. -->
+        <div class="hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off" /></label></div>
+
+        <button class="btn btn-deep" type="submit" id="tsubmit">{f.submit}</button>
+        <p class="tstatus" id="tstatus" role="status" aria-live="polite"></p>
+        <div class="claimdone" id="tclaim" hidden>
+          <b>{r.doneTitle}</b>
+          <p>{r.doneText}</p>
+          <a class="btn btn-deep" id="tclaim-wa" href={waBase} target="_blank" rel="noopener">{r.waBtn}</a>
+        </div>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  // Click-to-play YouTube (no third-party request until the visitor presses play)
+  document.querySelectorAll<HTMLElement>('.bt-stage').forEach((stage) => {
+    const id = stage.dataset.yt;
+    const btn = stage.querySelector<HTMLButtonElement>('.play');
+    if (!id || !btn) return;
+    btn.addEventListener('click', () => {
+      const f = document.createElement('iframe');
+      f.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`;
+      f.title = stage.dataset.title || '';
+      f.allow = 'autoplay; encrypted-media; picture-in-picture';
+      f.allowFullscreen = true;
+      f.referrerPolicy = 'strict-origin-when-cross-origin';
+      stage.replaceChildren(f);
+    });
+  });
+
+  // Type filter
+  const grid = document.getElementById('tgrid');
+  const empty = document.getElementById('tempty');
+  const emptyTitle = document.getElementById('tempty-title');
+  const emptyText = document.getElementById('tempty-text');
+    document.querySelectorAll<HTMLButtonElement>('.tfilter').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tfilter').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+      const k = btn.dataset.filter;
+      let shown = 0;
+      grid?.querySelectorAll<HTMLElement>('.tcard').forEach((c) => {
+        const ok = k === 'all' || c.dataset.type === k;
+        c.hidden = !ok;
+        if (ok) { shown++; c.classList.remove('in'); void c.offsetWidth; c.classList.add('in'); }
+      });
+      if (empty) empty.hidden = shown > 0;
+    });
+  });
+
+  // Form
+  const form = document.getElementById('tform') as HTMLFormElement | null;
+  if (form) {
+    const msg = JSON.parse(form.dataset.msg || '{}');
+    const status = document.getElementById('tstatus')!;
+    const submit = document.getElementById('tsubmit') as HTMLButtonElement;
+    const story = document.getElementById('f-story') as HTMLTextAreaElement;
+    const count = document.getElementById('story-count')!;
+    story.addEventListener('input', () => { count.textContent = String(story.value.length); });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.className = 'tstatus';
+      const claimBoxReset = document.getElementById('tclaim');
+      if (claimBoxReset) claimBoxReset.hidden = true;
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        status.textContent = msg.invalid;
+        status.classList.add('err');
+        return;
+      }
+      const data = Object.fromEntries(new FormData(form).entries()) as Record<string, string>;
+      if (data.website) return; // honeypot
+      delete data.website;
+      const endpoint = form.dataset.endpoint;
+      submit.disabled = true;
+      submit.textContent = msg.sending;
+      try {
+        if (endpoint) {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...data, language: form.dataset.lang, page: location.pathname }),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          status.textContent = msg.success;
+        } else {
+          // No backend configured: hand the testimonial to the team through WhatsApp.
+          const lines = [
+            form.dataset.waPrefix,
+            `Nama: ${data.name}`,
+            `Kota: ${data.city}`,
+            data.product ? `Produk: ${data.product}` : '',
+            data.duration ? `Lama pemakaian: ${data.duration}` : '',
+            `Penilaian: ${data.rating}/5`,
+            `Pengalaman: ${data.story}`,
+            data.media ? `Tautan: ${data.media}` : '',
+            `Kontak: ${data.contact}`,
+            'Izin ditampilkan: ya. Pengalaman pribadi: ya.',
+            data.claim ? 'Klaim selang/aksesori gratis: ya' : '',
+          ].filter(Boolean);
+          window.open(`${form.dataset.wa}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener');
+          status.textContent = msg.successWa;
+        }
+        status.classList.add('ok');
+        const claimBox = document.getElementById('tclaim');
+        if (claimBox) {
+          claimBox.hidden = !data.claim;
+          const wa = document.getElementById('tclaim-wa') as HTMLAnchorElement | null;
+          if (data.claim && wa) {
+            const tpl = JSON.parse(form.dataset.claimWaText || '""') as string;
+            wa.href = `${form.dataset.wa}?text=${encodeURIComponent(tpl.replace('{{name}}', data.name))}`;
+            claimBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }
+        form.reset();
+        count.textContent = '0';
+      } catch {
+        status.textContent = msg.error;
+        status.classList.add('err');
+      } finally {
+        submit.disabled = false;
+        submit.textContent = msg.submit;
+      }
+    });
+  }
+</script>

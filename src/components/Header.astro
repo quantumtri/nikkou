@@ -1,43 +1,52 @@
 ---
 import { Image } from 'astro:assets';
 import logo from '../assets/logo-wordmark.png';
-import { cfg, preview, waLink } from '../lib/content.js';
+import { cfg, preview, waLinkFor } from '../lib/content.js';
+import { getT, localePath } from '../i18n/index.js';
+import LangSwitch from './LangSwitch.astro';
 
-const { home = false } = Astro.props;
-const p = home ? '' : '/';
+const { home = false, lang = 'id', alternates = [] } = Astro.props;
+const t = getT(lang);
+const p = home ? '' : localePath(lang, '/');
+const waLink = waLinkFor(lang);
 
 const hasProof = preview || Object.values(cfg.evidence).some(Boolean);
 const hasFaq = true;
 
 const items = [
-  { href: `${p}#masalah`, label: 'Masalah' },
-  { href: `${p}#teknologi`, label: 'Solusi' },
-  { href: `${p}#cara-pakai`, label: 'Cara pakai' },
-  hasProof && { href: `${p}#bukti`, label: 'Bukti' },
-  { href: `${p}#produk`, label: 'Produk' },
-  hasFaq && { href: `${p}#faq`, label: 'FAQ' },
+  { href: `${p}#masalah`, label: t.common.nav.problem },
+  { href: `${p}#teknologi`, label: t.common.nav.solution },
+  { href: `${p}#cara-pakai`, label: t.common.nav.usage },
+  hasProof && { href: `${p}#bukti`, label: t.common.nav.proof },
+  { href: `${p}#produk`, label: t.common.nav.products },
+  { href: localePath(lang, '/testimoni'), label: t.common.footer.testimonials, current: Astro.url.pathname.includes('/testimoni') },
+  hasFaq && { href: `${p}#faq`, label: t.common.nav.faq },
 ].filter(Boolean);
 
 const cta = home ? { href: '#konsultasi' } : { href: waLink, ext: true };
 ---
 <header class="header">
   <div class="header-in">
-    <a class="logo" href={home ? '#atas' : '/'} aria-label="Beranda Nikkou">
+    <a class="logo" href={home ? '#atas' : localePath(lang, '/')} aria-label={t.common.homeAria}>
       <Image src={logo} alt="NIKKOU" width={240} loading="eager" />
     </a>
-    <nav class="nav-links" aria-label="Menu utama">
-      {items.map((i) => <a class="navlink" href={i.href}>{i.label}</a>)}
+    <nav class="nav-links" aria-label={t.common.menuMain}>
+      {items.map((i) => <a class="navlink" href={i.href} aria-current={i.current ? 'page' : undefined}>{i.label}</a>)}
     </nav>
     <div class="header-actions">
-      <a class="btn btn-line" href={cta.href} target={cta.ext ? '_blank' : undefined} rel={cta.ext ? 'noopener' : undefined}>Konsultasi</a>
-      <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label="Buka menu">
+      <LangSwitch lang={lang} alternates={alternates} />
+      <a class="btn btn-line" href={cta.href} target={cta.ext ? '_blank' : undefined} rel={cta.ext ? 'noopener' : undefined}>{t.common.consult}</a>
+      <button class="burger" type="button" aria-expanded="false" aria-controls="mnav" aria-label={t.common.openMenu} data-open={t.common.openMenu} data-close={t.common.closeMenu}>
         <svg class="bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         <svg class="x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </div>
   </div>
-  <nav class="mnav" id="mnav" aria-label="Menu seluler" hidden>
-    {items.map((i) => <a href={i.href}>{i.label}</a>)}
+  <nav class="mnav" id="mnav" aria-label={t.common.menuMobile} hidden>
+    {items.map((i) => <a href={i.href} aria-current={i.current ? 'page' : undefined}>{i.label}</a>)}
+    <div class="mlang" role="group" aria-label={t.common.language}>
+      {alternates.map((a) => <a href={a.href} lang={getT(a.lang).htmlLang} hreflang={getT(a.lang).htmlLang} aria-current={a.lang === lang ? 'true' : undefined}>{getT(a.lang).nativeName}</a>)}
+    </div>
   </nav>
 </header>
 
@@ -47,7 +56,7 @@ const cta = home ? { href: '#konsultasi' } : { href: waLink, ext: true };
   if (btn && nav) {
     const set = (open: boolean) => {
       btn.setAttribute('aria-expanded', String(open));
-      btn.setAttribute('aria-label', open ? 'Tutup menu' : 'Buka menu');
+      btn.setAttribute('aria-label', (open ? btn.dataset.close : btn.dataset.open) || '');
       nav.hidden = !open;
     };
     btn.addEventListener('click', () => set(btn.getAttribute('aria-expanded') !== 'true'));

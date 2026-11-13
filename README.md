@@ -44,6 +44,36 @@ Nilai `null` berarti bagian terkait **disembunyikan** di build produksi.
 
 Foto aksesori: taruh file di `src/assets/aksesori.png` (atau format lain) agar kartu aksesori tampil.
 
+## Bahasa
+
+Situs tersedia dalam 5 bahasa. Indonesia adalah bahasa utama (tanpa prefiks), sisanya memakai prefiks di URL:
+
+| Bahasa | Landing | Artikel |
+|---|---|---|
+| Indonesia | `/` | `/artikel/apa-itu-terapi-hidrogen` |
+| English | `/en/` | `/en/artikel/apa-itu-terapi-hidrogen` |
+| 中文 (Simplified) | `/zh/` | `/zh/artikel/apa-itu-terapi-hidrogen` |
+| 日本語 | `/ja/` | `/ja/artikel/apa-itu-terapi-hidrogen` |
+| 한국어 | `/ko/` | `/ko/artikel/apa-itu-terapi-hidrogen` |
+
+- Semua teks ada di `src/i18n/{id,en,zh,ja,ko}.js` dengan struktur kunci yang sama. Tambah atau ubah teks di semua file sekaligus.
+- Tanda `{it}...{/it}` di judul menghasilkan kata penekanan bergaya Newsreader. Untuk CJK gaya italic diganti huruf tebal.
+- Data dari `site.config.mjs` boleh berupa teks biasa (Indonesia) atau objek per bahasa, misalnya `garansi: { id: '...', en: '...', zh: '...' }`. Bahasa yang belum diisi memakai teks Indonesia.
+- Font Noto Sans SC/JP/KR dimuat hanya di halaman bahasa terkait. Teks WhatsApp otomatis mengikuti bahasa halaman.
+- Dengan `SITE_URL` terisi, halaman otomatis memuat `hreflang` untuk semua bahasa.
+- **Terjemahan EN/ZH/JA/KO ditulis oleh AI dan belum ditinjau penutur asli.** Minta peninjauan sebelum rilis, terutama kalimat tentang manfaat dan keamanan, karena aturan iklan produk kesehatan berbeda di tiap negara.
+
+## Halaman testimoni
+
+`/testimoni` (dan `/en/testimoni`, `/zh/testimoni`, `/ja/testimoni`, `/ko/testimoni`) menampilkan semua bentuk testimoni (tulisan, foto, video) dengan filter jenis, dan formulir bagi pelanggan untuk mengirim pengalaman mereka. Tautannya ada di footer dan di section "Cerita pengguna" pada landing.
+
+- **Tata letak**: hero berilustrasi, lalu mosaik "Sorotan" yang mencampur video, foto, kutipan, dan cerita panjang (otomatis dipilih dari data: video pertama, foto pertama dan kedua, satu kutipan, dan satu cerita di atas 180 karakter), lalu daftar kartu "Semua testimoni" dengan filter untuk sisanya, lalu formulir. Video YouTube baru dimuat saat tombol putar ditekan. Isi `poster` (gambar di `public/testimoni/`) agar video punya sampul.
+- **Isi daftar**: hanya dari `testimonials` di `site.config.mjs`, yaitu testimoni asli dengan izin tertulis. Format tiap item ada di komentar file itu (`type`: `text`, `photo`, atau `video`; opsional `poster` untuk video). Foto ditaruh di `public/testimoni/`. Video boleh tautan YouTube atau file di `public/testimoni/`. Bila kosong, halaman menampilkan pesan ajakan, tanpa data karangan.
+- **Formulir**: wajib mengisi nama, kota, penilaian, cerita, kontak verifikasi, dan dua centang (izin tampil dan pernyataan pengalaman pribadi). Ada kolom jebakan (honeypot) untuk bot dan petunjuk agar tidak menulis klaim menyembuhkan.
+- **Tujuan pengiriman**: bila `FORM_ENDPOINT` terisi, formulir mengirim JSON ke alamat itu (cocok dengan Formspree dan layanan sejenis). Bila `null`, formulir membuka WhatsApp dengan pesan yang sudah terisi. Kiriman tidak langsung tampil di situs: tim memverifikasi dulu, lalu menambahkannya ke `site.config.mjs`.
+- **Hadiah testimoni**: halaman menawarkan selang atau aksesori gratis bagi setiap pengguna yang testimoninya lolos verifikasi. Atur di `testimonialReward` pada `site.config.mjs` (`enabled: false` untuk mematikan, `terms` untuk syarat tambahan). Pelanggan mencentang klaim di formulir; setelah kirim muncul panel klaim dengan tombol WhatsApp, dan alamat pengiriman ditanyakan tim lewat kontak, bukan di formulir. Hadiah tidak boleh bergantung pada isi atau penilaian, dan halaman mencantumkan pengungkapan tentang hadiah itu.
+- Layanan formulir pihak ketiga bisa berbayar atau menyimpan data pelanggan. Putuskan dulu sebelum mengisi `FORM_ENDPOINT`.
+
 ## Struktur
 
 ```
@@ -51,7 +81,9 @@ site.config.mjs          data yang perlu diisi
 src/lib/content.js       helper config, mode preview, link WhatsApp
 src/layouts/Base.astro   head, SEO, JSON-LD, header, footer, widget
 src/components/          Header (hamburger), Footer, WaWidget (QR build-time), Icon
-src/pages/               index.astro, artikel/apa-itu-terapi-hidrogen.astro
+src/pages/               index.astro, artikel/..., [lang]/ (en, zh, ja, ko)
+src/components/Landing.astro, ArticlePage.astro  isi halaman (dipakai semua bahasa)
+src/i18n/                kamus teks per bahasa
 src/styles/global.css    token brand dan seluruh gaya
 src/assets/              gambar sumber (dioptimasi ke WebP saat build)
 ```
@@ -66,6 +98,9 @@ src/assets/              gambar sumber (dioptimasi ke WebP saat build)
 - [ ] Periksa atau ganti foto wanita yang bertuliskan "NIKOU"
 - [ ] Jawaban FAQ resmi
 - [ ] Build dengan `SITE_URL` final; pastikan tidak ada `[ ]` terlihat
+- [ ] Terjemahan EN, ZH, JA, KO ditinjau penutur asli dan diperiksa terhadap aturan iklan setempat
+- [ ] Konfirmasi ketentuan hadiah testimoni (jenis barang, batas jumlah, masa berlaku, ongkos kirim) dan isi `testimonialReward.terms` bila perlu
+- [ ] Putuskan tujuan formulir testimoni (`FORM_ENDPOINT` atau WhatsApp) dan uji pengirimannya
 - [ ] Uji di Chrome desktop dan HP (lebar 360–414px)
 
 ## Aturan konten

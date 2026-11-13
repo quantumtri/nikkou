@@ -1,0 +1,561 @@
+---
+import { Image } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Icon from './Icon.astro';
+import { cfg, preview, ph, pick, waLinkFor, waLabelFor } from '../lib/content.js';
+import { getT, rich, loc, localePath } from '../i18n/index.js';
+
+import biru from '../assets/inhaler-biru-cutout.png';
+import putih from '../assets/inhaler-putih-cutout.png';
+import ruangTamu from '../assets/ruang-tamu-inhaler-putih.png';
+import sesi from '../assets/sesi-samping-tempat-tidur.png';
+import dokter from '../assets/dokter-chen-xing-han.png';
+import membaca from '../assets/wanita-membaca-cutout.png';
+import kanula from '../assets/wanita-kanula-cutout.png';
+
+const { lang = 'id' } = Astro.props;
+const T = getT(lang);
+const t = T.home;
+const waLink = waLinkFor(lang);
+const waLabel = waLabelFor(lang);
+// Free text from site.config.mjs may be a string or { id, en, zh, ja, ko }.
+const P = (value, label) => pick(loc(value, lang), label);
+
+const accessoryImg = Object.values(import.meta.glob('../assets/aksesori.*', { eager: true, import: 'default' }))[0];
+
+/* ---------- Teknologi ---------- */
+const annotations = [
+  { t: t.tech.annoTube, d: P(cfg.tech.tabung, 'Fungsi jendela tabung pada saat alat bekerja') },
+  { t: t.tech.annoDisplay, d: P(cfg.tech.indikator, 'Jelaskan indikator air, filter, dan suhu dalam Bahasa Indonesia') },
+  { t: t.tech.annoHandle.t, d: t.tech.annoHandle.d },
+  { t: t.tech.annoLight, d: P(cfg.tech.lampuDasar, 'Fungsi lampu dasar, misalnya penanda alat menyala') },
+].filter((a) => a.d);
+
+const labTest = cfg.evidence.labTest ?? (preview ? { lab: '[Nama lab]', certificate: '[nomor sertifikat]', purity: '[angka kemurnian]' } : null);
+const batas = P(cfg.tech.batasKonsentrasi, 'batas konsentrasi');
+const fitur = P(cfg.tech.fiturKeselamatan, 'Daftar fitur keselamatan: katup satu arah, filter, sensor, dan pemutus otomatis');
+const pillars = [
+  labTest && { icon: 'drop', tone: 'rose', t: t.tech.purity.t, d: t.tech.purity.d(labTest.purity) },
+  batas && { icon: 'gauge', tone: 'sky', t: t.tech.limit.t, d: t.tech.limit.d(batas) },
+  fitur && { icon: 'shield', tone: 'grey', t: t.tech.safety.t, d: fitur },
+].filter(Boolean);
+
+/* ---------- Cara pakai ---------- */
+const air = P(cfg.usage.jenisAir, 'jenis air yang dianjurkan');
+const siap = P(cfg.usage.durasiPersiapan, 'durasi persiapan');
+const sesiDur = P(cfg.usage.durasiSesi, 'durasi sesi');
+const step1 = t.usage.step1(air, siap);
+const step2 = t.usage.step2(sesiDur);
+
+/* ---------- Bukti ---------- */
+const izin = cfg.evidence.izinEdar ?? (preview ? { number: '[Nomor izin edar Kemenkes]', validUntil: '[tanggal berlaku]' } : null);
+const garansi = P(cfg.evidence.garansi, 'Lama garansi dan cakupannya');
+const servis = P(cfg.evidence.servis, 'Lokasi servis, jam layanan, dan kontak WhatsApp');
+const proofs = [
+  izin && { icon: 'shieldcheck', t: t.proof.permit.t, d: t.proof.permit.d(izin.number, izin.validUntil) },
+  labTest && { icon: 'flask', t: t.proof.lab.t, d: t.proof.lab.d(labTest.lab, labTest.certificate, labTest.purity) },
+  garansi && { icon: 'award', t: t.proof.warranty, d: garansi },
+  servis && { icon: 'chat', t: t.proof.service, d: servis },
+].filter(Boolean);
+
+/* ---------- Produk ---------- */
+const mkProduct = (key, base, extra) => {
+  const c = cfg.products[key];
+  const name = P(c.name, 'Nama Produk');
+  return {
+    ...extra,
+    title: name ? `${base} ${name}` : base,
+    price: P(c.price, 'Rp harga'),
+    strike: c.strikePrice ?? ph('Rp harga coret'),
+    off: c.discount ?? ph('xx%'),
+    realName: c.name,
+    realPrice: c.price,
+  };
+};
+const products = [
+  mkProduct('biru', t.products.blue, { img: biru, alt: t.products.blueAlt, bg: 'var(--rose)', badge: t.products.badgeBlue, badgeBg: 'var(--deep)' }),
+  mkProduct('putih', t.products.white, { img: putih, alt: t.products.whiteAlt, bg: 'var(--sky-light)', badge: t.products.badgeWhite, badgeBg: '#10304f' }),
+];
+const accPrice = P(cfg.products.aksesori.price, 'Rp harga mulai dari');
+const showAccessory = Boolean(accessoryImg) || preview;
+
+/* ---------- Konsultasi ---------- */
+const hours = P(cfg.hours, 'jam layanan');
+
+/* ---------- Perbandingan ---------- */
+const R = t.compare.rows;
+const compare = [
+  { label: R.limit[0], other: R.limit[1], show: !!batas },
+  { label: R.lab[0], other: R.lab[1], show: !!labTest },
+  { label: R.safety[0], other: R.safety[1], show: !!fitur },
+  { label: R.permit[0], other: R.permit[1], show: !!izin && !!garansi },
+  { label: R.service[0], other: R.service[1], show: !!servis },
+].filter((r) => r.show);
+
+/* ---------- Dokter & testimoni ---------- */
+const showDoctor = cfg.doctor.permission === true || preview;
+const testimonials = cfg.testimonials.length
+  ? cfg.testimonials.filter((x) => x.quote).slice(0, 3).map((x) => ({ ...x, quote: loc(x.quote, lang) }))
+  : preview
+    ? ['pertama', 'kedua', 'ketiga'].map((n) => ({ quote: `[Testimoni asli pengguna ${n}, dengan izin tertulis]`, name: '[Nama, kota]', duration: '[Lama pemakaian]' }))
+    : [];
+const avatarBg = ['var(--rose)', 'var(--sky-light)', 'var(--mist)'];
+
+/* ---------- FAQ ---------- */
+const F = t.faq;
+const faqs = [
+  { q: F.safeQ, a: P(cfg.faq.amanDiRumah, 'Jawaban berdasarkan fitur keselamatan alat dan petunjuk penggunaan resmi') },
+  {
+    q: F.whoQ,
+    a: [F.whoA, P(cfg.faq.kondisiMedisTambahan, 'Tambahkan daftar resmi')].filter(Boolean).join(' '),
+  },
+  { q: F.cureQ, a: F.cureA },
+  { q: F.brokenQ, a: P(cfg.faq.garansiServis, 'Prosedur garansi, lokasi servis, dan waktu penanganan') },
+].filter((f) => f.a);
+
+/* ---------- Artikel ---------- */
+const A = t.articles;
+const mainDate = pick(cfg.articles.main.date, 'dd/mm/yyyy');
+const others = cfg.articles.others.map((a, i) => ({
+  ...a,
+  title: loc(a.title, lang),
+  category: loc(a.category, lang),
+  summary: P(a.summary, 'Ringkasan 2 sampai 3 baris dari artikel'),
+  date: pick(a.date, 'dd/mm/yyyy'),
+  ready: Boolean(a.href) || preview,
+  href: a.href ?? '#artikel',
+  img: [biru, sesi, putih][i],
+  imgAlt: A.otherAlts[i],
+  bg: ['var(--rose)', 'var(--mist)', 'var(--sky-light)'][i],
+  cover: i === 1,
+})).filter((a) => a.ready);
+const articleHref = localePath(lang, '/artikel/apa-itu-terapi-hidrogen');
+
+/* ---------- SEO ---------- */
+const jsonLd = [];
+if (faqs.length) {
+  jsonLd.push({
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: T.htmlLang,
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  });
+}
+for (const p of products) {
+  if (p.realName && p.realPrice) {
+    jsonLd.push({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: `${p.title}`,
+      offers: { '@type': 'Offer', priceCurrency: 'IDR', price: String(p.realPrice).replace(/\D/g, '') },
+    });
+  }
+}
+---
+<Base
+  home
+  announce
+  lang={lang}
+  title={t.title}
+  description={t.description}
+  jsonLd={jsonLd}
+>
+  <!-- Hero -->
+  <section id="atas" class="hero on-red">
+    <div class="hero-in">
+      <div class="hero-copy">
+        <h1 set:html={rich(t.hero.h1)} />
+        <p class="hero-sub">{t.hero.sub}</p>
+        <div class="btn-row">
+          <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">{t.hero.cta}</a>
+          <a class="btn btn-ghost" href="#produk">{t.hero.ctaProducts}</a>
+        </div>
+      </div>
+
+      <div class="hero-grid">
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:8%;right:2%;top:16%;bottom:0;background:#F9CDC9;border-radius:999px 999px 28px 28px"></div>
+            <Image src={membaca} alt={t.hero.alts[0]} width={560} loading="eager" style="left:-6%;bottom:-3%;width:104%" />
+          </div>
+          <figcaption class="cap">{t.hero.caps[0]}</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:4%;right:4%;top:20%;bottom:0;background:#86B3E0;border-radius:36px"></div>
+            <Image src={kanula} alt={t.hero.alts[1]} width={560} loading="eager" style="left:0;bottom:-3%;width:100%" />
+          </div>
+          <figcaption class="cap">{t.hero.caps[1]}</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <Image src={ruangTamu} alt={t.hero.alts[2]} width={560} loading="eager" style="left:0;top:16%;width:100%;height:84%;border-radius:28px;object-fit:cover;object-position:30% center" />
+          </div>
+          <figcaption class="cap">{t.hero.caps[2]}</figcaption>
+        </figure>
+        <figure class="fig-item" style="margin:0 auto">
+          <div class="fig">
+            <div class="shape" style="left:0;right:0;top:16%;bottom:0;background:#F49C94;border-radius:999px 999px 28px 28px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden">
+              <Image src={biru} alt={t.hero.alts[3]} width={520} loading="eager" style="position:static;width:92%;height:92%;object-fit:contain" />
+            </div>
+          </div>
+          <figcaption class="cap">{t.hero.caps[3]}</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Masalah -->
+  <section id="masalah" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <div class="col" style="gap:16px;max-width:820px">
+        <h2 class="h2" set:html={rich(t.problem.h2)} />
+        <p class="it" style="font-size:22px;line-height:1.5;color:#2a2625">{t.problem.quote}</p>
+        <p class="lead">{t.problem.lead}</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ico ico-rose"><Icon name="target" /></div>
+          <h3>{t.problem.needs[0].t}</h3>
+          <p>{t.problem.needs[0].d}</p>
+        </div>
+        <div class="card">
+          <div class="ico ico-sky"><Icon name="dropcheck" /></div>
+          <h3>{t.problem.needs[1].t}</h3>
+          <p>{t.problem.needs[1].d}</p>
+        </div>
+        <div class="card">
+          <div class="ico ico-grey"><Icon name="shieldcheck" /></div>
+          <h3>{t.problem.needs[2].t}</h3>
+          <p>{t.problem.needs[2].d}</p>
+        </div>
+      </div>
+
+      <div class="sky-box">
+        <div class="col" style="flex:1 1 340px;min-width:0;gap:12px">
+          <h3>{t.problem.whyTitle}</h3>
+          <p set:html={t.problem.whyBody} />
+        </div>
+        <div class="note-box">
+          <strong>{t.problem.noteTitle}</strong>
+          <p>{t.problem.noteBody}</p>
+        </div>
+      </div>
+
+      <div class="col" style="gap:8px;padding-top:16px">
+        <h3 class="h2" style="font-size:clamp(24px,3vw,32px);line-height:1.2" set:html={rich(t.problem.h3)} />
+        <p class="lead" style="font-size:18px">{t.problem.h3Lead}</p>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="ico ico-rose"><Icon name="searchinfo" /></div>
+          <h3>{t.problem.worries[0].t}</h3>
+          <p>{t.problem.worries[0].d}</p>
+          <div class="answer"><strong>{t.problem.answer}</strong> {t.problem.worries[0].a}</div>
+        </div>
+        <div class="card">
+          <div class="ico ico-sky"><Icon name="alert" /></div>
+          <h3>{t.problem.worries[1].t}</h3>
+          <p>{t.problem.worries[1].d}</p>
+          <div class="answer"><strong>{t.problem.answer}</strong> {t.problem.worries[1].a}</div>
+        </div>
+        <div class="card">
+          <div class="ico ico-grey"><Icon name="chatlines" /></div>
+          <h3>{t.problem.worries[2].t}</h3>
+          <p>{t.problem.worries[2].d}</p>
+          <div class="answer"><strong>{t.problem.answer}</strong> {t.problem.worries[2].a}</div>
+        </div>
+      </div>
+
+      <div class="band">
+        <div>{t.problem.band}</div>
+        <a class="btn btn-deep" href="#teknologi">{t.problem.bandBtn}</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Teknologi -->
+  <section id="teknologi" class="sec rose">
+    <div class="wrap col" style="gap:48px">
+      <div class="col" style="gap:16px;max-width:760px">
+        <div class="eyebrow">{t.tech.eyebrow}</div>
+        <h2 class="h2" style="color:var(--darkest)" set:html={rich(t.tech.h2)} />
+        <p class="lead" style="color:#3a2220">{t.tech.lead(pillars.length)}</p>
+      </div>
+
+      <div class="tech-row">
+        <div class="showcase">
+          <Image src={biru} alt={t.tech.showcaseAlt} width={800} />
+        </div>
+        <div class="anno">
+          {annotations.map((a) => (
+            <div class="anno-i"><div class="dot"></div><div><div class="anno-t">{a.t}</div><div class="anno-d">{a.d}</div></div></div>
+          ))}
+        </div>
+      </div>
+
+      {pillars.length > 0 && (
+        <div class="cards">
+          {pillars.map((p) => (
+            <div class="card white">
+              <div class={`ico lg ico-${p.tone}`}><Icon name={p.icon} /></div>
+              <h3>{p.t}</h3>
+              <p>{p.d}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  <!-- Cara pakai -->
+  <section id="cara-pakai" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <h2 class="h2" set:html={rich(t.usage.h2)} />
+      <div class="steps">
+        <div class="step">
+          <div class="step-img" style="background:var(--rose)"><Image src={biru} alt={t.usage.steps[0].alt} width={640} /></div>
+          <div class="num">1</div>
+          <h3>{t.usage.steps[0].t}</h3>
+          <p>{step1}</p>
+        </div>
+        <div class="step">
+          <Image class="step-photo" src={sesi} alt={t.usage.steps[1].alt} width={800} />
+          <div class="num">2</div>
+          <h3>{t.usage.steps[1].t}</h3>
+          <p>{step2}</p>
+        </div>
+        <div class="step">
+          <div class="step-img" style="background:var(--sky-light)"><Image src={putih} alt={t.usage.steps[2].alt} width={640} /></div>
+          <div class="num">3</div>
+          <h3>{t.usage.steps[2].t}</h3>
+          <p>{t.usage.step3}</p>
+        </div>
+      </div>
+      <div class="disclaimer">{t.usage.disclaimer}</div>
+    </div>
+  </section>
+
+  <!-- Bukti -->
+  {proofs.length > 0 && (
+    <section id="bukti" class="sec paper" style="padding-bottom:72px">
+      <div class="wrap col" style="gap:40px">
+        <h2 class="h2" set:html={rich(t.proof.h2)} />
+        <div class="cards">
+          {proofs.map((p) => (
+            <div class="proof">
+              <Icon name={p.icon} stroke={1.6} />
+              <h3>{p.t}</h3>
+              <p>{p.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Produk -->
+  <section id="produk" class="sec">
+    <div class="wrap col" style="gap:40px">
+      <h2 class="h2" set:html={rich(t.products.h2)} />
+      <div class="pcards">
+        {products.map((p) => (
+          <div class="pcard">
+            <div class="pimg" style={`background:${p.bg}`}>
+              <Image src={p.img} alt={p.alt} width={640} />
+              <span class="pbadge" style={`background:${p.badgeBg}`}>{p.badge}</span>
+            </div>
+            <div class="pbody">
+              <h3>{p.title}</h3>
+              {p.strike && p.off && <div class="row"><span class="strike">{p.strike}</span><span class="off">{p.off} {t.products.off}</span></div>}
+              {p.price && <div class="price">{p.price}</div>}
+              <div><a class="btn btn-line" href="#konsultasi">{t.products.learn}</a></div>
+            </div>
+          </div>
+        ))}
+        {showAccessory && (
+          <div class="pcard">
+            <div class="pimg" style="background:var(--rose)">
+              {accessoryImg ? <Image src={accessoryImg} alt={t.products.accAlt} width={640} /> : '[Foto produk: masker dan aksesori]'}
+              <span class="pbadge" style="background:#fff;color:var(--darkest)">{t.products.badgeParts}</span>
+            </div>
+            <div class="pbody">
+              <h3>{t.products.accTitle}</h3>
+              <div style="color:var(--grey);font-size:15px;line-height:1.5">{t.products.accDesc}</div>
+              {accPrice && <div class="price">{accPrice}</div>}
+              <div><a class="btn btn-line" href="#konsultasi">{t.products.learn}</a></div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+
+  <!-- Konsultasi -->
+  <section id="tanya-tim" class="sec rose">
+    <div class="wrap consult">
+      <div class="consult-fig">
+        <div class="fig">
+          <div class="shape" style="left:10%;right:10%;top:10%;bottom:0;background:#86B3E0;border-radius:999px 999px 32px 32px"></div>
+          <Image src={membaca} alt={t.consult.alt} width={640} style="left:2%;bottom:-2%;width:96%" />
+          {[['left:0;top:8%', t.consult.chips[0]], ['right:0;top:46%', t.consult.chips[1]], ['left:2%;top:78%', t.consult.chips[2]]].map(([pos, label]) => (
+            <div class="chip" style={pos}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#C0261B"/><path d="M7 12.5l3.5 3.5L17 9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>{label}
+            </div>
+          ))}
+        </div>
+      </div>
+      <div class="consult-copy">
+        <h2 class="h2" set:html={rich(t.consult.h2)} />
+        <p class="big">{t.consult.body}</p>
+        <div><a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">{t.consult.btn}</a></div>
+        <p class="small">{t.consult.small(hours)}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Perbandingan -->
+  {compare.length > 0 && (
+    <section class="sec paper">
+      <div class="wrap col" style="max-width:1000px;gap:40px">
+        <div class="col" style="gap:14px;max-width:720px">
+          <h2 class="h2" set:html={rich(t.compare.h2)} />
+          <p class="lead">{t.compare.lead(compare.length)}</p>
+        </div>
+        <div class="scroll-x" tabindex="0" role="region" aria-label={t.compare.region}>
+          <div class="table">
+            <div class="tr head">
+              <div class="td">{t.compare.head[0]}</div>
+              <div class="td">{t.compare.head[1]}</div>
+              <div class="td">{t.compare.head[2]}</div>
+            </div>
+            {compare.map((r, i) => (
+              <div class={`tr${i % 2 ? ' alt' : ''}`}>
+                <div class="td">{r.label}</div>
+                <div class="td" style="display:flex;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label={t.compare.yes}><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+                <div class="td no">{r.other}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Dokter (hanya tayang bila ada izin tertulis) -->
+  {showDoctor && (
+    <section class="expert">
+      <div class="expert-in">
+        <div class="expert-photo">
+          <Image src={dokter} alt={t.expert.alt} width={640} />
+        </div>
+        <div class="expert-copy">
+          <h2 class="h2" set:html={rich(t.expert.h2)} />
+          <p class="lede">{t.expert.lede}</p>
+          <div class="cred">
+            <div class="role">{t.expert.role}</div>
+            <div class="list">
+              <div class="name">{t.expert.name} {lang !== 'zh' && lang !== 'ja' && lang !== 'ko' && <span>(陳興漢)</span>}</div>
+              <div class="li first">Mantan Wakil Direktur, RS Terpadu Min-Sheng, Taoyuan</div>
+              <div class="li">Kepala Pusat Terapi Oksigen Hiperbarik, RS Terpadu Min-Sheng</div>
+              <div class="li">Kepala Departemen Penyakit Akibat Kerja, RS Terpadu Min-Sheng</div>
+              <div class="li">Anggota Komite Khusus Terapi Biooksidasi Tiongkok</div>
+              <div class="li">Sarjana Kedokteran, Pendidikan Kedokteran Pertahanan Nasional</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Testimoni -->
+  {testimonials.length > 0 && (
+    <section class="sec paper">
+      <div class="wrap col" style="gap:40px">
+        <div class="head-row">
+          <h2 class="h2" set:html={rich(t.testimonials.h2)} />
+          <a class="btn btn-line" href={localePath(lang, '/testimoni')}>{t.testimonials.all}</a>
+        </div>
+        <div class="cards">
+          {testimonials.map((t, i) => (
+            <div class="quote">
+              <p>{t.quote}</p>
+              <div class="who">
+                <div class="avatar" style={`background:${avatarBg[i % 3]}`}></div>
+                <div><b>{t.city ? `${t.name}, ${t.city}` : t.name}</b>{t.duration && <span>{t.duration}</span>}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- FAQ -->
+  <section id="faq" class="sec">
+    <div class="faq-wrap">
+      <h2 class="h2" set:html={rich(F.h2)} />
+      <div>
+        {faqs.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Artikel -->
+  <section id="artikel" class="sec paper">
+    <div class="wrap col" style="gap:40px">
+      <div class="head-row">
+        <h2 class="h2" set:html={rich(A.h2)} />
+        {others.length > 0 && <a class="btn btn-line" href="#artikel">{A.all}</a>}
+      </div>
+      <div class="acards">
+        <article class="acard">
+          <div class="aimg" style="background:var(--mist)">
+            <Image class="cover" src={ruangTamu} alt={A.mainAlt} width={640} style="object-fit:cover;object-position:30% center" />
+            <span class="abadge">{A.badge}</span>
+          </div>
+          <div class="abody">
+            <h3>{A.mainTitle}</h3>
+            <p>{A.mainSummary}</p>
+            <div class="foot-a">
+              {mainDate && <span class="date">{mainDate}</span>}
+              <a class="btn btn-line" href={articleHref}>{A.read}</a>
+            </div>
+          </div>
+        </article>
+        {others.map((a) => (
+          <article class="acard">
+            <div class={`aimg${a.cover ? '' : ' pad'}`} style={`background:${a.bg}`}>
+              <Image class={a.cover ? 'cover' : 'contain'} src={a.img} alt={a.imgAlt} width={640} style={a.cover ? 'object-position:center 60%' : ''} />
+              <span class="abadge">{a.category}</span>
+            </div>
+            <div class="abody">
+              <h3>{a.title}</h3>
+              {a.summary && <p>{a.summary}</p>}
+              <div class="foot-a">
+                {a.date && <span class="date">{a.date}</span>}
+                <a class="btn btn-line" href={a.href}>{A.read}</a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="konsultasi" class="cta on-red">
+    <div class="cta-in">
+      <h2 set:html={rich(t.cta.h2)} />
+      <p>{t.cta.p}</p>
+      <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">{waLabel}</a>
+    </div>
+  </section>
+</Base>

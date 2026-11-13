@@ -1,0 +1,10 @@
+---
+import Landing from '../../components/Landing.astro';
+import { locales, defaultLocale } from '../../i18n/index.js';
+
+export function getStaticPaths() {
+  return locales.filter((l) => l !== defaultLocale).map((lang) => ({ params: { lang } }));
+}
+const { lang } = Astro.params;
+---
+<Landing lang={lang} />

@@ -5,6 +5,8 @@
 export default {
   // WhatsApp business number, international format without "+" (example: 6281234567890)
   WA_NUMBER: '',
+  // Where the testimonial form posts its JSON (e.g. a Formspree URL). null = the form opens WhatsApp with a prefilled message instead.
+  FORM_ENDPOINT: null,
   WA_TEXT: 'Halo, saya ingin konsultasi tentang inhaler hidrogen',
 
   brand: 'Nikkou',
@@ -44,8 +46,15 @@ export default {
     aksesori: { price: null },
   },
 
-  // Real testimonials with written permission: [{ quote, name, city, duration }]
+  // Real testimonials with written permission. Never invent or edit these.
+  // { type: 'text' | 'photo' | 'video', quote, name, city, duration, product, rating (1-5),
+  //   image: '/testimoni/foto.jpg' (file in public/, for photo), videoUrl: 'https://youtu.be/...' or '/testimoni/video.mp4' (for video) }
+  // `quote` can be a string or { id, en, zh, ja, ko }. Women's stock photos are not testimonials.
   testimonials: [],
+
+  // Free hose/accessory offered to everyone who sends a verified testimonial (shown on the testimonials page).
+  // The gift must not depend on the content or rating. `terms` = optional extra conditions, string or { id, en, zh, ja, ko }.
+  testimonialReward: { enabled: true, terms: null },
 
   // Dokter section: keep false until written permission from dr. Chen Xing-Han (and no NTU/Min-Sheng logos).
   doctor: { permission: false },

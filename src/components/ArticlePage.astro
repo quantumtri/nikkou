@@ -1,0 +1,235 @@
+---
+import { Image, getImage } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import { cfg, preview, pick, waLinkFor, waLabelFor } from '../lib/content.js';
+import { getT, rich, loc, localePath } from '../i18n/index.js';
+
+import biru from '../assets/inhaler-biru-cutout.png';
+import putih from '../assets/inhaler-putih-cutout.png';
+import ruangTamu from '../assets/ruang-tamu-inhaler-putih.png';
+import sesi from '../assets/sesi-samping-tempat-tidur.png';
+
+const { lang = 'id' } = Astro.props;
+const T = getT(lang);
+const t = T.article;
+const waLink = waLinkFor(lang);
+const waLabel = waLabelFor(lang);
+const home = localePath(lang, '/');
+const P = (value, label) => pick(loc(value, lang), label);
+
+const title = t.title;
+const description = t.description;
+
+const a = cfg.articles.main;
+const author = pick(a.author, 'Nama penulis');
+const date = pick(a.date, 'dd/mm/yyyy');
+const reviewer = P(a.reviewedBy, 'Nama dokter, gelar, dan institusi. Isi setelah ada persetujuan tertulis.');
+const meta = [author && t.meta.by(author), date && t.meta.updated(date), t.meta.read].filter(Boolean).join(' · ');
+
+const biruName = P(cfg.products.biru.name, 'Nama Produk');
+const prodTitle = biruName ? `${t.product.blue} ${biruName}` : t.product.blue;
+const prodPrice = P(cfg.products.biru.price, 'Rp harga');
+
+const tocIds = ['apa-itu', 'penelitian', 'cara-pakai', 'tanya-dokter', 'alat-aman', 'kesimpulan', 'referensi'];
+const toc = tocIds.map((id, i) => [id, t.toc[i]]);
+
+const durasi = P(cfg.usage.durasiSesi, 'Durasi sesi sesuai petunjuk pemakaian produk Anda');
+const faqs = [
+  { q: t.faq.cureQ, a: t.faq.cureA },
+  { q: t.faq.sessionQ, a: cfg.usage.durasiSesi ? t.faq.sessionA(durasi) : durasi },
+  { q: t.faq.dailyQ, a: P(cfg.faq.amanDiRumah, 'Jawaban berdasarkan petunjuk pemakaian resmi dan saran dokter') },
+  { q: t.faq.medicalQ, a: t.faq.medicalA },
+].filter((f) => f.a);
+
+const otherAlts = T.home.articles.otherAlts;
+const related = cfg.articles.others
+  .map((o, i) => ({ ...o, title: loc(o.title, lang), category: loc(o.category, lang), ready: Boolean(o.href) || preview, href: o.href ?? '#', img: [biru, sesi, putih][i], alt: otherAlts[i], bg: ['var(--rose)', 'var(--mist)', 'var(--sky-light)'][i], cover: i === 1 }))
+  .filter((r) => r.ready);
+
+const banner = await getImage({ src: ruangTamu, width: 1400, format: 'webp' });
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: title,
+    description,
+    inLanguage: T.htmlLang,
+    image: [banner.src],
+    ...(a.author ? { author: { '@type': 'Person', name: a.author } } : {}),
+    ...(a.date ? { dateModified: a.date } : {}),
+    publisher: { '@type': 'Organization', name: 'Nikkou' },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    inLanguage: T.htmlLang,
+    mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+  },
+];
+---
+<Base lang={lang} title={`${title} | Nikkou`} description={description} ogType="article" jsonLd={jsonLd}>
+  <!-- Breadcrumb + banner -->
+  <section class="sec art-sec" style="padding:28px 24px 8px">
+    <div class="wrap col" style="gap:20px">
+      <nav class="crumbs" aria-label="Breadcrumb">
+        <a href={home}>{t.crumbs.home}</a><span aria-hidden="true">/</span><a href={`${home}#artikel`}>{t.crumbs.articles}</a><span aria-hidden="true">/</span><span class="cur" aria-current="page">{t.tag}</span>
+      </nav>
+      <div class="banner">
+        <Image src={ruangTamu} alt={t.bannerAlt} width={1400} loading="eager" />
+        <div class="shade"></div>
+        <div class="banner-in">
+          <span class="tag">{t.tag}</span>
+          <h1>{title}</h1>
+          <div class="meta">{meta}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Body -->
+  <section class="sec art-sec" style="padding:48px 24px 72px">
+    <div class="art-layout">
+      <nav class="toc" aria-label={t.tocAria}>
+        <b>{t.tocTitle}</b>
+        {toc.map(([id, label]) => <a class="toclink" href={`#${id}`}>{label}</a>)}
+      </nav>
+
+      <article class="article">
+        <p>{t.intro}</p>
+
+        <div class="callout"><strong>{t.callout[0]}</strong> {t.callout[1]}</div>
+
+        <h2 id="apa-itu">{t.what.h}</h2>
+        <p set:html={t.what.p1} />
+        <p>{t.what.p2}</p>
+
+        <h2 id="penelitian">{t.research.h}</h2>
+        <p set:html={t.research.p1} />
+        <p>{t.research.p2}</p>
+
+        <h2 id="cara-pakai">{t.how.h}</h2>
+        <p>{t.how.p}</p>
+        <div class="scroll-x" tabindex="0" role="region" aria-label={t.how.region}>
+          <div class="mini-table">
+            <div class="tr head"><div class="td a">{t.how.head[0]}</div><div class="td b">{t.how.head[1]}</div><div class="td c">{t.how.head[2]}</div></div>
+            {t.how.rows.map((r, i) => (
+              <div class={`tr${i % 2 ? ' alt' : ''}`}><div class="td a">{r[0]}</div><div class="td b">{r[1]}</div><div class="td c">{r[2]}</div></div>
+            ))}
+          </div>
+        </div>
+
+        <div class="inline-prod">
+          <div class="thumb"><Image src={biru} alt={t.product.alt} width={240} /></div>
+          <div class="info">
+            <span class="tagbest">{t.product.badge}</span>
+            <div class="nm">{prodTitle}</div>
+            {prodPrice && <div class="pr">{prodPrice}</div>}
+          </div>
+          <div class="row" style="gap:12px">
+            <a class="btn btn-line" href={`${home}#produk`}>{t.product.details}</a>
+            <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">{t.product.order}</a>
+          </div>
+        </div>
+
+        <h2 id="tanya-dokter">{t.doctor.h}</h2>
+        <p>{t.doctor.p}</p>
+        <ol>
+          {t.doctor.list.map((li) => <li>{li}</li>)}
+        </ol>
+        <p>{t.doctor.stop}</p>
+
+        <h2 id="alat-aman">{t.safe.h}</h2>
+        <p>{t.safe.p}</p>
+        <ul>
+          {t.safe.list.map((li) => <li>{li}</li>)}
+        </ul>
+
+        <h2 id="kesimpulan">{t.conclusion.h}</h2>
+        <p>{t.conclusion.p}</p>
+
+        <div class="refs" id="referensi">
+          <b>{t.refs.title}</b>
+          <div set:html={t.refs.ohsawa} />
+          {preview && <div>[Tambahkan referensi lain yang Anda pakai]</div>}
+        </div>
+
+        {reviewer && (
+          <div class="review">
+            <b>{t.review}</b>
+            <div style="color:var(--body)">{reviewer}</div>
+          </div>
+        )}
+      </article>
+
+      <aside class="side" aria-label={t.aside.aria}>
+        <div class="side-card">
+          <div class="pimg" style="background:var(--rose)">
+            <Image src={biru} alt={t.product.alt} width={480} />
+            <span class="pbadge">{t.product.badge}</span>
+          </div>
+          <div class="body">
+            <div class="nm">{prodTitle}</div>
+            {prodPrice && <div class="pr">{prodPrice}</div>}
+            <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">{t.product.order}</a>
+            <a class="btn btn-line" href={`${home}#produk`}>{t.product.details}</a>
+          </div>
+        </div>
+        <div class="side-ask">
+          <b>{t.aside.askTitle}</b>
+          <span>{t.aside.askText}</span>
+          <a class="btn btn-deep" href={waLink} target="_blank" rel="noopener">{t.aside.askBtn}</a>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="sec paper art-sec" style="padding:72px 24px">
+    <div class="faq-wrap" style="gap:28px">
+      <h2 class="h2" style="font-size:clamp(28px,4vw,40px)" set:html={rich(t.faq.h2)} />
+      <div>
+        {faqs.map((f) => (
+          <details>
+            <summary>{f.q}</summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Artikel terkait -->
+  {related.length > 0 && (
+    <section class="sec art-sec" style="padding:72px 24px">
+      <div class="wrap col" style="gap:32px">
+        <div class="head-row">
+          <h2 class="h2" style="font-size:clamp(28px,4vw,40px)" set:html={rich(t.related.h2)} />
+          <a class="btn btn-line" href={`${home}#artikel`}>{t.related.all}</a>
+        </div>
+        <div class="acards">
+          {related.map((r) => (
+            <article class="acard">
+              <div class={`aimg${r.cover ? '' : ' pad'}`} style={`background:${r.bg}`}>
+                <Image class={r.cover ? 'cover' : 'contain'} src={r.img} alt={r.alt} width={640} style={r.cover ? 'object-position:center 60%' : ''} />
+                <span class="abadge">{r.category}</span>
+              </div>
+              <div class="abody">
+                <h3>{r.title}</h3>
+                <div class="foot-a"><a class="btn btn-line" href={r.href}>{t.related.read}</a></div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- CTA -->
+  <section class="cta on-red art-sec" style="padding:72px 24px">
+    <div class="cta-in" style="gap:22px">
+      <h2 style="font-size:clamp(30px,5vw,48px)" set:html={rich(t.cta.h2)} />
+      <a class="btn btn-white" href={waLink} target="_blank" rel="noopener">{waLabel}</a>
+    </div>
+  </section>
+</Base>

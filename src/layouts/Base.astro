@@ -4,11 +4,16 @@ import { getImage } from 'astro:assets';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import WaWidget from '../components/WaWidget.astro';
+import { getT, locales, defaultLocale, localePath, stripLocale } from '../i18n/index.js';
 import ogSource from '../assets/ruang-tamu-inhaler-putih.png';
 import iconSource from '../assets/logo-symbol.png';
 import logoSource from '../assets/logo-wordmark.png';
 
-const { title, description, home = false, ogType = 'website', jsonLd = [], announce = false } = Astro.props;
+const { title, description, home = false, ogType = 'website', jsonLd = [], announce = false, lang = 'id' } = Astro.props;
+const t = getT(lang);
+const basePath = stripLocale(Astro.url.pathname);
+const alternates = locales.map((l) => ({ lang: l, href: localePath(l, basePath) }));
+const cjkFont = { zh: 'Noto+Sans+SC', ja: 'Noto+Sans+JP', ko: 'Noto+Sans+KR' }[lang];
 
 const og = await getImage({ src: ogSource, width: 1200, height: 630, format: 'jpg', fit: 'cover' });
 const icon = await getImage({ src: iconSource, width: 96, height: 96, format: 'png' });
@@ -26,16 +31,18 @@ const organization = {
 const graphs = [organization, ...jsonLd];
 ---
 <!doctype html>
-<html lang="id" class="motion">
+<html lang={t.htmlLang} class="motion">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
+    {Astro.site && alternates.map((a) => <link rel="alternate" hreflang={a.lang === 'zh' ? 'zh-Hans' : a.lang} href={new URL(a.href, Astro.site).href} />)}
+    {Astro.site && <link rel="alternate" hreflang="x-default" href={new URL(localePath(defaultLocale, basePath), Astro.site).href} />}
     <link rel="icon" type="image/png" href={icon.src} />
     <meta property="og:site_name" content="Nikkou" />
-    <meta property="og:locale" content="id_ID" />
+    <meta property="og:locale" content={t.ogLocale} />
     <meta property="og:type" content={ogType} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -52,21 +59,22 @@ const graphs = [organization, ...jsonLd];
       if (matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.remove('motion');
       setTimeout(function () { if (!window.__motionReady) document.documentElement.classList.remove('motion'); }, 3000);
     </script>
+    {cjkFont && <link href={`https://fonts.googleapis.com/css2?family=${cjkFont}:wght@400;500;600;700&display=swap`} rel="stylesheet" />}
     {graphs.map((g) => <script type="application/ld+json" set:html={JSON.stringify(g)} />)}
   </head>
   <body>
-    <a class="skip" href="#utama">Lewati ke konten</a>
+    <a class="skip" href="#utama">{t.common.skip}</a>
     {announce && (
       <div class="announce">
-        Mau tahu apakah inhaler hidrogen cocok untuk Anda? <a href="#konsultasi">Konsultasi gratis di sini.</a>
+        {t.common.announce} <a href="#konsultasi">{t.common.announceLink}</a>
       </div>
     )}
-    <Header home={home} />
+    <Header home={home} lang={lang} alternates={alternates} />
     <main id="utama">
       <slot />
     </main>
-    <Footer home={home} />
-    <WaWidget />
+    <Footer home={home} lang={lang} />
+    <WaWidget lang={lang} />
     <script>
       import '../scripts/motion.js';
     </script>

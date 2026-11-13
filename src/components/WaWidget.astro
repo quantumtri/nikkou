@@ -2,7 +2,12 @@
 import { Image } from 'astro:assets';
 import QRCode from 'qrcode';
 import symbol from '../assets/logo-symbol.png';
-import { waLink } from '../lib/content.js';
+import { waLinkFor } from '../lib/content.js';
+import { getT } from '../i18n/index.js';
+
+const { lang = 'id' } = Astro.props;
+const w = getT(lang).common.wa;
+const waLink = waLinkFor(lang);
 
 // QR is generated at build time from WA_NUMBER (module color #C0261B on white).
 const qr = await QRCode.toString(waLink, {
@@ -14,16 +19,16 @@ const qr = await QRCode.toString(waLink, {
 ---
 <div class="wa" id="wa">
   <div class="wa-card" id="wa-card">
-    <button class="wa-min" type="button" aria-label="Minimalkan chat" data-wa-toggle>
+    <button class="wa-min" type="button" aria-label={w.minimize} data-wa-toggle>
       <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>
     </button>
-    <div class="wa-title">Chat WhatsApp sekarang!</div>
-    <a class="wa-qr" href={waLink} target="_blank" rel="noopener" aria-label="Buka WhatsApp untuk konsultasi">
-      <span role="img" aria-label="Kode QR WhatsApp" set:html={qr} style="display:block" />
+    <div class="wa-title">{w.title}</div>
+    <a class="wa-qr" href={waLink} target="_blank" rel="noopener" aria-label={w.qrLink}>
+      <span role="img" aria-label={w.qrLabel} set:html={qr} style="display:block" />
     </a>
-    <div class="wa-hint">Pindai kode QR atau klik untuk membuka WhatsApp.</div>
+    <div class="wa-hint">{w.hint}</div>
   </div>
-  <button class="wa-btn" type="button" aria-label="Buka atau tutup chat WhatsApp" aria-controls="wa-card" aria-expanded="true" data-wa-toggle>
+  <button class="wa-btn" type="button" aria-label={w.toggle} aria-controls="wa-card" aria-expanded="true" data-wa-toggle>
     <Image src={symbol} alt="" width={128} />
   </button>
 </div>

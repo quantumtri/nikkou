@@ -5,6 +5,8 @@ import { useLenis } from './useLenis.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Chinese and Japanese have no spaces between words, so word splitting would create one huge unbreakable word.
+const noSpaces = ['zh-Hans', 'ja'].includes(document.documentElement.lang);
 const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function ready() {
@@ -26,7 +28,9 @@ if (reduce) {
   // Hero intro
   const heroTl = gsap.timeline({ defaults: { ease }, delay: 0.15 });
   const h1 = document.querySelector('.hero h1');
-  if (h1) {
+  if (h1 && noSpaces) {
+    heroTl.from(h1, { y: 40, opacity: 0, duration: 1 }, 0.1);
+  } else if (h1) {
     const s = new SplitType(h1, { types: 'lines,words' });
     splits.push(s);
     heroTl.from(s.words, { yPercent: 110, duration: 1, stagger: 0.07 }, 0.1);
@@ -38,6 +42,10 @@ if (reduce) {
 
   // Section headings: lines rise from a mask
   document.querySelectorAll('.h2, .cta h2').forEach((el) => {
+    if (noSpaces) {
+      gsap.from(el, { y: 36, opacity: 0, duration: 0.9, ease, scrollTrigger: { trigger: el, start: 'top 88%', once: true } });
+      return;
+    }
     const s = new SplitType(el, { types: 'lines,words' });
     splits.push(s);
     gsap.from(s.words, {
@@ -51,6 +59,10 @@ if (reduce) {
 
   // Scrubbed text: words light up as you scroll
   document.querySelectorAll('#masalah .lead, .cta p').forEach((el) => {
+    if (noSpaces) {
+      gsap.fromTo(el, { opacity: 0.18 }, { opacity: 1, ease: 'none', scrollTrigger: { trigger: el, start: 'top 85%', end: 'bottom 55%', scrub: true } });
+      return;
+    }
     const s = new SplitType(el, { types: 'words' });
     splits.push(s);
     gsap.fromTo(
@@ -66,7 +78,7 @@ if (reduce) {
   });
 
   // Fade-up for cards and blocks, batched so neighbours stagger
-  const fadeTargets = '.cards > *, .step, .pcard, .acard, .faq-wrap details, .scroll-x, .quote,.expert .wrap > *, .consult-copy > *, .chip';
+  const fadeTargets = '.cards > *, .step, .pcard, .acard, .faq-wrap details, .scroll-x, .quote,.expert .wrap > *, .consult-copy > *, .chip, .bento > *, .tsteps li';
   ScrollTrigger.batch(fadeTargets, {
     start: 'top 90%',
     once: true,

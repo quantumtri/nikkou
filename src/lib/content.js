@@ -1,4 +1,5 @@
 import cfg from '../../site.config.mjs';
+import { getT } from '../i18n/index.js';
 
 export const preview = process.env.PREVIEW_PLACEHOLDERS === '1';
 
@@ -17,6 +18,19 @@ if (!number && !preview) {
 export const waNumber = number;
 export const waLink = `https://wa.me/${number}?text=${encodeURIComponent(cfg.WA_TEXT)}`;
 export const waLabel = number ? `Chat WhatsApp +${number}` : preview ? 'Chat WhatsApp [nomor]' : 'Chat WhatsApp';
+
+/** Locale-aware WhatsApp link and label. Indonesian keeps WA_TEXT from site.config.mjs. */
+export const waLinkFor = (lang) => {
+  const text = lang === 'id' ? cfg.WA_TEXT : getT(lang).common.wa.text;
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+};
+export const waLabelFor = (lang) => {
+  const w = getT(lang).common.wa;
+  return number ? w.label(number) : preview ? w.labelPlaceholder : w.labelNoNumber;
+};
+
+export const formEndpoint = cfg.FORM_ENDPOINT || null;
+export const waBase = `https://wa.me/${number}`;
 
 export const brand = cfg.brand;
 export { cfg };
