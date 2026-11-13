@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Loan;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia;
@@ -98,4 +99,24 @@ it('keeps sales inside Inertia when they sign in', function () {
     $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => ''])
         ->post('/login', ['email' => $sales->email, 'password' => 'password'])
         ->assertRedirect(route('sales.home'));
+});
+
+it('does not render the admin panel in a modal when the login was reached from the site root', function () {
+    $admin = User::factory()->admin()->create();
+
+    // A guest opens "/" first: the intended URL becomes "/", which itself redirects to the panel.
+    $this->get('/')->assertRedirect('/login');
+
+    $this->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => ''])
+        ->post('/login', ['email' => $admin->email, 'password' => 'password'])
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', '/admin');
+});
+
+it('answers an Inertia visit to the site root with a full page load for panel users', function () {
+    $this->actingAs(User::factory()->admin()->create())
+        ->withHeaders(['X-Inertia' => 'true', 'X-Inertia-Version' => (string) app(HandleInertiaRequests::class)->version(request())])
+        ->get('/')
+        ->assertStatus(409)
+        ->assertHeader('X-Inertia-Location', '/admin');
 });

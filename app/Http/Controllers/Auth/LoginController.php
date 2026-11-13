@@ -47,15 +47,11 @@ class LoginController extends Controller
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 
-        $target = $request->session()->pull('url.intended', self::homeFor($request->user()));
+        $target = self::destination($request->user(), $request->session()->pull('url.intended'));
 
         // The admin panel is a Filament (Livewire) app, not an Inertia page. An Inertia visit to it
         // would render the panel inside a modal over the login form, so leave Inertia with a full page load.
-        if (str_starts_with(parse_url($target, PHP_URL_PATH) ?? '', '/admin')) {
-            return Inertia::location($target);
-        }
-
-        return redirect()->to($target);
+        return self::redirectTo($target);
     }
 
     public function destroy(Request $request): RedirectResponse
@@ -65,6 +61,25 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    /**
+     * Where to go after signing in. The site root only redirects onward, so it is resolved here:
+     * following that redirect inside an Inertia request would render the admin panel in a modal.
+     */
+    public static function destination(User $user, ?string $intended): string
+    {
+        $path = trim((string) parse_url((string) $intended, PHP_URL_PATH), '/');
+
+        return $path === '' ? self::homeFor($user) : $intended;
+    }
+
+    /** A redirect that also works for Inertia visits: the admin panel is not an Inertia page. */
+    public static function redirectTo(string $url): \Symfony\Component\HttpFoundation\Response
+    {
+        return str_starts_with(parse_url($url, PHP_URL_PATH) ?? '', '/admin')
+            ? Inertia::location($url)
+            : redirect()->to($url);
     }
 
     public static function homeFor(User $user): string

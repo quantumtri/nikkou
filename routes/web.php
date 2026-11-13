@@ -23,7 +23,7 @@ Route::middleware(['signed', 'throttle:20,1'])->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/logout', [LoginController::class, 'destroy'])->name('logout');
 
-    Route::get('/', fn () => redirect(LoginController::homeFor(request()->user())))->name('home');
+    Route::get('/', fn () => LoginController::redirectTo(LoginController::homeFor(request()->user())))->name('home');
 
     // Private files: signed, short-lived URLs plus a policy check.
     Route::middleware('signed')->group(function () {
