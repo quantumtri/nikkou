@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
 
 class LoanService
 {
-    public function __construct(private readonly UnitStatusService $unitStatus) {}
+    public function __construct(private readonly UnitStatusService $unitStatus, private readonly FollowupPlanner $followups) {}
 
     /**
      * Record a loan (spec S2): the unit becomes "on loan", the customer and
@@ -90,6 +90,9 @@ class LoanService
             }
 
             ActivityLog::record($loan, 'loan.created', $sales, null, LoanStatus::Active->value, $unit->code);
+
+            // Follow-up WhatsApp messages (only for opted-in home trials, only approved wording).
+            $this->followups->planForLoan($loan);
 
             return $loan;
         });

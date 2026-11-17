@@ -7,12 +7,25 @@ defineProps({
     firstName: String,
     stats: Object,
     loans: Array,
+    alerts: { type: Array, default: () => [] },
 });
 </script>
 
 <template>
     <Head title="Beranda" />
     <SalesLayout>
+        <section v-if="alerts.length" class="mb-5" aria-labelledby="alerts-title">
+            <h2 id="alerts-title" class="text-[17px] font-semibold text-nikkou-red-ink">Keluhan serius dari pelanggan</h2>
+            <ul class="mt-2 flex flex-col gap-3">
+                <li v-for="alert in alerts" :key="alert.id" class="alert">
+                    <div class="font-semibold">{{ alert.customer }} <span class="text-xs font-normal">| {{ alert.when }}</span></div>
+                    <p class="mt-1 text-[13px]">"{{ alert.excerpt }}"</p>
+                    <a :href="alert.whatsappUrl" target="_blank" rel="noopener" class="btn-primary mt-3 min-h-[44px] text-sm">Hubungi sekarang</a>
+                </li>
+            </ul>
+            <p class="mt-2 text-xs text-nikkou-muted">Pesan otomatis ke pelanggan ini sudah dihentikan. Admin sudah diberi tahu.</p>
+        </section>
+
         <section class="rounded-[28px] bg-nikkou-red-deep p-5 text-white">
             <h1 class="text-[28px] leading-tight font-semibold tracking-[-0.01em]">Halo, {{ firstName }}</h1>
             <p class="mt-1 text-sm">{{ today }}</p>

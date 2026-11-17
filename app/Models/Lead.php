@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['customer_id', 'sales_id', 'status', 'cancel_reason', 'cancel_note', 'notes', 'source'])]
+#[Fillable(['customer_id', 'sales_id', 'status', 'cancel_reason', 'cancel_note', 'notes', 'source', 'serious_complaint_at'])]
 class Lead extends Model
 {
     use HasFactory, OwnedBySales;
@@ -23,6 +23,7 @@ class Lead extends Model
         return [
             'status' => LeadStatus::class,
             'cancel_reason' => LeadCancelReason::class,
+            'serious_complaint_at' => 'datetime',
         ];
     }
 

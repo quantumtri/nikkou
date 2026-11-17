@@ -31,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
             'loan' => Models\Loan::class,
             'lead' => Models\Lead::class,
             'customer' => Models\Customer::class,
+            'followup_template' => Models\FollowupTemplate::class,
+            'safety_keyword' => Models\SafetyKeyword::class,
+            'experience_message' => Models\ExperienceMessage::class,
         ]);
     }
 }

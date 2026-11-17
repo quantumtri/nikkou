@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  */
 class ReturnService
 {
-    public function __construct(private readonly UnitStatusService $unitStatus) {}
+    public function __construct(private readonly UnitStatusService $unitStatus, private readonly FollowupPlanner $followups) {}
 
     /**
      * @param  array<int, array{component: string, is_complete: bool, notes?: ?string}>  $checks
@@ -85,6 +85,8 @@ class ReturnService
             );
 
             ActivityLog::record($loan, 'loan.returned', $actor, LoanStatus::Active->value, LoanStatus::Returned->value, $notes);
+
+            $this->followups->planAfterReturn($loan->refresh());
 
             if ($needsService) {
                 $this->notifyAdmins($loan, $reasons, $notes);
