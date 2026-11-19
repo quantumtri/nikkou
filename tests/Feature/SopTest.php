@@ -274,6 +274,16 @@ describe('admin screens', function () {
         expect($sop->refresh()->activeVersion->number)->toBe(2);
     });
 
+    it('shows every diagram on one page, scoped by role', function () {
+        $this->seed(SopSeeder::class);
+
+        $this->actingAs($this->admin)->get('/admin/sop-diagrams')->assertOk()
+            ->assertSee('SOP-01')->assertSee('data-step="s1"', false)->assertSee('SOP-02')->assertSee('Alur belum diisi');
+        $this->actingAs($this->gudang)->get('/admin/sop-diagrams')->assertOk()
+            ->assertSee('SOP-01')->assertDontSee('SOP-02');
+        $this->actingAs($this->dewi)->get('/admin/sop-diagrams')->assertForbidden();
+    });
+
     it('keeps warehouse and sales out of the editor', function () {
         $this->seed(SopSeeder::class);
         $sop = Sop::where('code', 'SOP-01')->first();
