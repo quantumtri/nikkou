@@ -17,11 +17,13 @@ class UnitStatusService
 {
     /** @var array<string, list<UnitStatus>> */
     private const TRANSITIONS = [
-        'available' => [UnitStatus::OnLoan, UnitStatus::NeedsService, UnitStatus::Sold],
+        'available' => [UnitStatus::OnLoan, UnitStatus::NeedsService, UnitStatus::Sold, UnitStatus::Held],
         'on_loan' => [UnitStatus::Available, UnitStatus::NeedsService],
         'needs_service' => [UnitStatus::InService, UnitStatus::Available],
         'in_service' => [UnitStatus::Available, UnitStatus::NeedsService],
         'sold' => [],
+        // Quarantine after a goods-receipt finding; leaves only through the receipt rules (A18).
+        'held' => [UnitStatus::Available, UnitStatus::NeedsService],
     ];
 
     public function canTransition(UnitStatus $from, UnitStatus $to): bool
