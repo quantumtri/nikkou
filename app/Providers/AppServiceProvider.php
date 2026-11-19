@@ -33,6 +33,9 @@ class AppServiceProvider extends ServiceProvider
             'customer' => Models\Customer::class,
             'sop' => Models\Sop::class,
             'sop_version' => Models\SopVersion::class,
+            'goods_receipt' => Models\GoodsReceipt::class,
+            'goods_receipt_item' => Models\GoodsReceiptItem::class,
+            'goods_receipt_finding' => Models\GoodsReceiptFinding::class,
         ]);
     }
 }

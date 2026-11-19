@@ -138,6 +138,14 @@ class UnitForm
                     ->maxLength(2000)
                     ->columnSpanFull()
                     ->visibleOn('edit'),
+
+                Section::make('Alasan tambah manual')
+                    ->description('Barang masuk dicatat lewat menu Penerimaan barang. Tambah unit langsung di sini hanya untuk koreksi, dan alasannya dicatat di riwayat unit.')
+                    ->columnSpanFull()
+                    ->visibleOn('create')
+                    ->schema([
+                        Textarea::make('reason')->label('Alasan')->required()->rows(2)->maxLength(500)->placeholder('Misal: unit lama belum pernah dicatat'),
+                    ]),
             ]);
     }
 

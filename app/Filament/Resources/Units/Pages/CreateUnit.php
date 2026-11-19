@@ -48,7 +48,7 @@ class CreateUnit extends CreateRecord
         }
 
         return app(UnitService::class)->create([
-            ...Arr::only($data, ['code', 'unit_type_id', 'received_on', 'forwarder', 'location', 'initial_notes']),
+            ...Arr::only($data, ['code', 'unit_type_id', 'received_on', 'forwarder', 'location', 'initial_notes', 'reason']),
             'components' => array_values($data['components'] ?? []),
             'documents' => $documents,
             'photos' => array_values(Arr::wrap($data['photos'] ?? [])),

@@ -32,6 +32,7 @@ class UnitStatusChart extends ChartWidget
             UnitStatus::NeedsService->value => '#727171',
             UnitStatus::InService->value => '#4A4543',
             UnitStatus::Sold->value => '#F49C94',
+            UnitStatus::Held->value => '#7A1D14',
         ];
 
         $statuses = array_filter(UnitStatus::cases(), fn (UnitStatus $s) => ($counts[$s->value] ?? 0) > 0);

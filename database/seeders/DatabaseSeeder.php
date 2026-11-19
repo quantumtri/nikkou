@@ -4,13 +4,17 @@ namespace Database\Seeders;
 
 use App\Enums\UserRole;
 use App\Models\ActivityLog;
+use App\Models\GoodsReceipt;
+use App\Models\GoodsReceiptFile;
 use App\Models\Loan;
 use App\Models\Unit;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Services\LoanService;
+use App\Services\ReceiptService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Demo and UAT data only. All names are fictional; never seed real customer data.
@@ -70,6 +74,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->seedLoans();
+        $this->seedReceipt();
 
         $this->call(SopSeeder::class);
     }
@@ -116,5 +121,85 @@ class DatabaseSeeder extends Seeder
                 'consent_whatsapp' => true,
             ], $sales, $start->copy()->setTime(10, 0));
         }
+    }
+
+    /** One goods receipt with 3 units: one passed, one failed, one with a finding. Waiting for the owner's approval. */
+    private function seedReceipt(): void
+    {
+        if (GoodsReceipt::exists()) {
+            return;
+        }
+
+        $service = app(ReceiptService::class);
+        $warehouse = User::where('email', 'gudang@nikkou.test')->firstOrFail();
+        $owner = User::where('email', 'admin@nikkou.test')->firstOrFail();
+        $type = UnitType::where('name', 'H2 Home')->firstOrFail();
+
+        $receipt = $service->create($warehouse, [
+            'received_on' => today()->subDay()->toDateString(),
+            'po_number' => 'PO-2026-118',
+            'supplier' => 'PT Hidrogen Asia Demo',
+            'forwarder' => 'PT Samudra Kargo Nusantara',
+            'tracking_number' => 'BL-884421',
+            'packages_expected' => 3,
+        ]);
+        $service->updateHeader($receipt, ['packages_received' => 3]);
+
+        foreach (['packaging_photographed' => true, 'damage_noted' => false, 'documents_match' => true, 'model_quantity_ok' => true, 'import_documents' => true, 'delivery_note_signed' => true] as $code => $passed) {
+            $service->setCheck($receipt, $code, $passed);
+        }
+
+        $service->syncFiles($receipt, GoodsReceiptFile::PACKAGE_PHOTO, [$this->demoImage('receipts/demo/kemasan.png', [200, 200, 200])]);
+        $service->syncFiles($receipt, GoodsReceiptFile::DELIVERY_NOTE, [$this->demoImage('receipts/demo/surat-jalan.png', [230, 230, 230])]);
+        foreach (['packing_list', 'invoice', 'bl_awb', 'pib'] as $document) {
+            $service->syncFiles($receipt, GoodsReceiptFile::IMPORT_DOCUMENT, [$this->demoImage("receipts/demo/{$document}.png", [240, 240, 240])], null, $document);
+        }
+
+        $components = fn (bool $complete) => [
+            ['name' => 'Unit utama', 'present' => true], ['name' => 'Adaptor dan kabel daya', 'present' => true],
+            ['name' => 'Selang', 'present' => true], ['name' => 'Kanula', 'present' => $complete], ['name' => 'Buku panduan', 'present' => true],
+        ];
+        $good = ['powers_on' => true, 'outputs' => true, 'no_leak' => true, 'no_abnormal' => true];
+
+        // 1. Passed.
+        $a = $service->addItem($receipt, ['unit_type_id' => $type->id, 'serial_number' => 'H2H-26-0101', 'components' => $components(true), 'physical_ok' => true, 'notes' => 'Segel utuh.']);
+        $service->recordTest($a, $good, $warehouse);
+
+        // 2. Failed the function test.
+        $b = $service->addItem($receipt, ['unit_type_id' => $type->id, 'serial_number' => 'H2H-26-0102', 'components' => $components(true), 'physical_ok' => true]);
+        $service->recordTest($b, [...$good, 'outputs' => false, 'fail_reason' => 'Output gas lemah, tidak mencapai angka normal.'], $warehouse);
+
+        // 3. Passed, but its carton arrived dented: a finding (closed by the owner after the photo was taken).
+        $c = $service->addItem($receipt, ['unit_type_id' => $type->id, 'serial_number' => 'H2H-26-0103', 'components' => $components(true), 'physical_ok' => true, 'notes' => 'Kardus penyok, unit baik.']);
+        $service->recordTest($c, $good, $warehouse);
+        $finding = $service->addFinding($receipt, [
+            'type' => 'damaged_packaging', 'description' => 'Kardus unit ke-3 penyok di sudut. Unit di dalam baik; difoto untuk klaim ke kurir.',
+            'goods_receipt_item_id' => $c->id, 'action' => 'claim', 'responsible_id' => $warehouse->id,
+        ], $warehouse);
+
+        foreach ([$a, $b, $c] as $i => $item) {
+            $service->syncFiles($receipt, GoodsReceiptFile::UNIT_PHOTO, [$this->demoImage("receipts/demo/unit-{$i}.png", [220 - $i * 15, 225, 235])], $item->id);
+        }
+
+        $service->closeFinding($finding, $owner);
+        $service->saveUnits($receipt, $warehouse);
+        foreach ([$a->refresh(), $b->refresh(), $c->refresh()] as $i => $item) {
+            $service->setShelf($item, 'A1-0'.($i + 1), $warehouse);
+        }
+        $service->submitForApproval($receipt, $warehouse);
+    }
+
+    /** Small placeholder picture so demo links open something real. */
+    private function demoImage(string $path, array $rgb): string
+    {
+        $image = imagecreatetruecolor(320, 220);
+        imagefill($image, 0, 0, imagecolorallocate($image, ...$rgb));
+        imagefilledrectangle($image, 40, 50, 200, 150, imagecolorallocate($image, 192, 38, 27));
+
+        ob_start();
+        imagepng($image);
+        Storage::disk('local')->put($path, (string) ob_get_clean());
+
+        return $path;
     }
 }

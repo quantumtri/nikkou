@@ -9,6 +9,7 @@ enum UnitStatus: string
     case NeedsService = 'needs_service';
     case InService = 'in_service';
     case Sold = 'sold';
+    case Held = 'held';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum UnitStatus: string
             self::NeedsService => 'Perlu servis',
             self::InService => 'Servis',
             self::Sold => 'Terjual',
+            self::Held => 'Ditahan',
         };
     }
 
