@@ -527,12 +527,21 @@ class ReceiptService
             throw new ReceiptRuleViolation(implode(' ', $problems));
         }
 
-        return DB::transaction(function () use ($receipt, $actor) {
+        $receipt = DB::transaction(function () use ($receipt, $actor) {
             $receipt->forceFill(['submitted_at' => now()])->save();
             $this->setStatus($receipt, GoodsReceipt::AWAITING_APPROVAL, $actor, 'Diajukan untuk persetujuan.');
 
             return $receipt;
         });
+
+        // Summary to the owners (app, email, WhatsApp queue). A delivery problem must not undo the submission.
+        try {
+            app(ReceiptNotifier::class)->submitted($receipt);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $receipt;
     }
 
     public function approve(GoodsReceipt $receipt, User $approver): GoodsReceipt

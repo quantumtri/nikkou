@@ -24,7 +24,7 @@ class CreateReceipt extends CreateRecord
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Persiapan')->description('Nomor lembar PB-YYYYMM-0001 dibuat otomatis saat disimpan.')->columns(3)->schema([
+            Section::make('Persiapan')->description('Nomor lembar PB-YYYYMM-0001 dibuat otomatis saat disimpan.')->columns(3)->columnSpanFull()->schema([
                 DatePicker::make('received_on')->label('Tanggal terima')->required()->default(today())->native(false)->displayFormat('d/m/Y')->maxDate(today()),
                 TextInput::make('po_number')->label('Nomor PO')->maxLength(100),
                 TextInput::make('packages_expected')->label('Koli tercatat')->numeric()->minValue(0)->maxValue(999),
@@ -48,7 +48,7 @@ class CreateReceipt extends CreateRecord
 
     protected function getRedirectUrl(): string
     {
-        return ReceiptResource::getUrl('edit', ['record' => $this->getRecord()]).'?step=kemasan-luar';
+        return ReceiptResource::getUrl('edit', ['record' => $this->getRecord()]);
     }
 
     protected function getCreatedNotificationTitle(): ?string
