@@ -54,7 +54,7 @@ class FindingsRelationManager extends RelationManager
             ->columns([
                 TextColumn::make('type')->label('Jenis')->formatStateUsing(fn (string $state) => GoodsReceiptFinding::typeLabel($state))->description(fn (GoodsReceiptFinding $record) => $record->item?->unit_code),
                 TextColumn::make('description')->label('Deskripsi')->wrap()->limit(160),
-                TextColumn::make('action')->label('Tindakan')->formatStateUsing(fn (?string $state) => GoodsReceiptFinding::ACTIONS[$state] ?? '-'),
+                TextColumn::make('action')->label('Tindakan')->formatStateUsing(fn (?string $state) => $state ? (GoodsReceiptFinding::ACTIONS[$state] ?? '-') : '-'),
                 TextColumn::make('due_on')->label('Batas waktu')->date('j M')
                     ->color(fn (GoodsReceiptFinding $record) => $record->isOverdue() ? 'danger' : null)
                     ->description(fn (GoodsReceiptFinding $record) => $record->isOverdue() ? 'Lewat batas waktu' : null),

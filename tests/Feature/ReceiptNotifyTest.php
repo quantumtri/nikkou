@@ -1,12 +1,15 @@
 <?php
 
 use App\Mail\ReceiptSummaryMail;
+use App\Models\GoodsReceipt;
 use App\Models\GoodsReceiptFile;
 use App\Models\GoodsReceiptFinding;
+use App\Models\Unit;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Services\ReceiptNotifier;
 use App\Services\ReceiptService;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -82,4 +85,17 @@ it('registers the overdue check with the scheduler', function () {
     $events = collect(app(Schedule::class)->events())->map->command;
 
     expect($events->contains(fn ($c) => str_contains((string) $c, 'receipts:notify-overdue')))->toBeTrue();
+});
+
+it('seeds one demo receipt with a passed, a failed and a unit with a finding, waiting for approval', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $receipt = GoodsReceipt::sole();
+    $units = Unit::whereIn('id', $receipt->items->pluck('unit_id'))->orderBy('code')->get();
+
+    expect($receipt->status)->toBe('awaiting_approval')
+        ->and($units)->toHaveCount(3)
+        ->and($units->pluck('status.value')->all())->toBe(['available', 'needs_service', 'available'])
+        ->and($receipt->findings)->toHaveCount(1)
+        ->and($receipt->items->pluck('result')->all())->toBe(['pass', 'fail', 'pass']);
 });

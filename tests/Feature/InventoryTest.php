@@ -82,6 +82,7 @@ it('creates a unit from the admin form with private uploads', function () {
             'code' => 'NK-0025',
             'unit_type_id' => $this->type->id,
             'received_on' => '2026-11-09',
+            'reason' => 'Koreksi data unit lama',
             'forwarder' => 'PT Samudra Kargo Nusantara',
             'photos' => [UploadedFile::fake()->image('depan.jpg')],
             'doc_invoice' => UploadedFile::fake()->create('invoice.pdf', 120, 'application/pdf'),

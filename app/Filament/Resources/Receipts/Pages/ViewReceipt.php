@@ -38,6 +38,11 @@ class ViewReceipt extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('print')
+                ->label('Cetak lembar periksa')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn (GoodsReceipt $record) => route('receipts.print', $record), shouldOpenInNewTab: true),
             Action::make('continue')
                 ->label('Lanjutkan pengisian')
                 ->icon('heroicon-o-pencil-square')
@@ -69,13 +74,14 @@ class ViewReceipt extends ViewRecord
     /** @return array<string, mixed> */
     protected function getViewData(): array
     {
-        $receipt = $this->getRecord()->load(['items.unit', 'items.tester', 'findings.item', 'checks', 'creator', 'approver']);
+        $receipt = $this->getRecord();
         $service = app(ReceiptService::class);
 
-        return [
-            'receipt' => $receipt,
-            'summary' => $service->summary($receipt),
-            'problems' => $receipt->status === GoodsReceipt::COMPLETED ? [] : $service->readinessProblems($receipt),
-        ];
+        // The service refreshes the model, so it runs first and the relations are loaded afterwards.
+        $summary = $service->summary($receipt);
+        $problems = $receipt->status === GoodsReceipt::COMPLETED ? [] : $service->readinessProblems($receipt);
+        $receipt->load(['items.unit', 'items.tester', 'findings.item', 'checks', 'creator', 'approver']);
+
+        return ['receipt' => $receipt, 'summary' => $summary, 'problems' => $problems];
     }
 }

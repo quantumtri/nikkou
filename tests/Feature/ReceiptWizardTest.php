@@ -12,6 +12,7 @@ use App\Models\Unit;
 use App\Models\UnitType;
 use App\Models\User;
 use App\Services\ReceiptService;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -175,4 +176,14 @@ it('lets only the owner approve, and not the receiver when something went wrong'
     $this->actingAs($this->owner);
     Livewire::test(ViewReceipt::class, ['record' => $receipt->getRouteKey()])->callAction('approve');
     expect($receipt->refresh()->status)->toBe('awaiting_approval');
+});
+
+it('shows a receipt with units, results and findings on the view page without lazy loading', function () {
+    $this->seed(DatabaseSeeder::class);
+    $receipt = GoodsReceipt::sole();
+
+    $this->actingAs($this->owner)->get(ReceiptResource::getUrl('view', ['record' => $receipt]))
+        ->assertOk()->assertSee($receipt->number)->assertSee('H2H-26-0102')->assertSee('Gagal')->assertSee('Menunggu persetujuan');
+
+    $this->get(ReceiptResource::getUrl('index'))->assertOk()->assertSee($receipt->number);
 });

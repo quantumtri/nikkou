@@ -17,7 +17,7 @@ class UnitService
      *
      * @param  array{
      *     code: string, unit_type_id: int, received_on: string, forwarder?: ?string, location?: ?string,
-     *     initial_notes?: ?string,
+     *     initial_notes?: ?string, reason?: ?string,
      *     components?: array<int, array{name: string, is_present: bool}>,
      *     documents?: array<int, array{type: string, file_path: string, original_name?: ?string}>,
      *     photos?: array<int, string>,
@@ -55,7 +55,7 @@ class UnitService
                 $unit->photos()->create(['stage' => UnitPhotoStage::Initial, 'file_path' => $path]);
             }
 
-            ActivityLog::record($unit, 'unit.created', $actor, null, $unit->status->value, 'Masuk gudang.');
+            ActivityLog::record($unit, 'unit.created', $actor, null, $unit->status->value, filled($data['reason'] ?? null) ? 'Ditambahkan manual: '.trim($data['reason']) : 'Masuk gudang.');
 
             return $unit;
         });

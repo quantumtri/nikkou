@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\InviteController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\LabelController;
 use App\Http\Controllers\ReceiptFileController;
+use App\Http\Controllers\ReceiptPrintController;
 use App\Http\Controllers\Sales\HomeController;
 use App\Http\Controllers\Sales\LoanController;
 use App\Http\Controllers\Sales\ReturnController;
@@ -43,6 +44,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/returns/create', [ReturnController::class, 'create'])->name('returns.create');
         Route::post('/returns', [ReturnController::class, 'store'])->name('returns.store');
     });
+
+    // Goods-receipt check sheet (admin and warehouse; the controller checks the policy).
+    // Not under /admin/receipts/: the panel's own /admin/receipts/{record} route would swallow it.
+    Route::get('/admin/receipt-forms/blank', [ReceiptPrintController::class, 'blank'])->name('receipts.blank');
+    Route::get('/admin/receipts/{receipt}/print', [ReceiptPrintController::class, 'show'])->whereNumber('receipt')->name('receipts.print');
 
     // Sales mobile app. Admins may use it too (spec section 2).
     Route::prefix('sales')->name('sales.')->middleware('role:admin,sales')->group(function () {

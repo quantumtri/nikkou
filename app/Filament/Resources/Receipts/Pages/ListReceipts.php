@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Receipts\Pages;
 
 use App\Filament\Resources\Receipts\ReceiptResource;
+use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 
@@ -16,6 +17,13 @@ class ListReceipts extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()->label('Terima kiriman baru')];
+        return [
+            Action::make('blank')
+                ->label('Cetak formulir kosong')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn () => route('receipts.blank'), shouldOpenInNewTab: true),
+            CreateAction::make()->label('Terima kiriman baru'),
+        ];
     }
 }

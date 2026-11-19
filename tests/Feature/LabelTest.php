@@ -119,7 +119,7 @@ it('can save a unit and go straight to label printing', function () {
     $type = UnitType::factory()->create();
 
     Livewire::test(CreateUnit::class)
-        ->fillForm(['code' => 'NK-0500', 'unit_type_id' => $type->id, 'received_on' => '2026-11-09'])
+        ->fillForm(['code' => 'NK-0500', 'unit_type_id' => $type->id, 'received_on' => '2026-11-09', 'reason' => 'Koreksi'])
         ->call('createAndPrint')
         ->assertHasNoFormErrors()
         ->assertRedirect(Labels::getUrl(['units' => Unit::where('code', 'NK-0500')->sole()->id]));

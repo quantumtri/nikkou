@@ -11,6 +11,7 @@ use App\Models\GoodsReceiptFile;
 use App\Models\GoodsReceiptItem;
 use App\Models\UnitType;
 use App\Services\ReceiptService;
+use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
 use Filament\Schemas\Schema;
@@ -62,6 +63,17 @@ class EditReceipt extends EditRecord
     protected function getFormActions(): array
     {
         return [];
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('print')
+                ->label('Cetak lembar periksa')
+                ->icon('heroicon-o-printer')
+                ->color('gray')
+                ->url(fn () => route('receipts.print', $this->getRecord()), shouldOpenInNewTab: true),
+        ];
     }
 
     #[On('refreshReceipt')]
