@@ -70,6 +70,8 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->seedLoans();
+
+        $this->call(SopSeeder::class);
     }
 
     /** Sample loans go through LoanService so status, leads and logs match real usage. */

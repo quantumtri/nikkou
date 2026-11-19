@@ -6,6 +6,7 @@ use App\Http\Controllers\LabelController;
 use App\Http\Controllers\Sales\HomeController;
 use App\Http\Controllers\Sales\LoanController;
 use App\Http\Controllers\Sales\ReturnController;
+use App\Http\Controllers\Sales\SopController;
 use App\Http\Controllers\UnitFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -49,5 +50,12 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/loans/create', [LoanController::class, 'create'])->name('loans.create');
         Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
         Route::get('/loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+    });
+
+    // SOP library: every role reads the active SOPs assigned to them (policy-checked).
+    Route::prefix('sales')->name('sales.')->middleware('role:admin,sales,warehouse')->group(function () {
+        Route::get('/sops', [SopController::class, 'index'])->name('sops.index');
+        Route::get('/sops/{sop}', [SopController::class, 'show'])->name('sops.show');
+        Route::post('/sops/{sop}/acknowledge', [SopController::class, 'acknowledge'])->name('sops.acknowledge');
     });
 });

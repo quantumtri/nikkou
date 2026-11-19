@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Sales;
 use App\Enums\LoanStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Loan;
+use App\Services\SopService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -25,6 +26,7 @@ class HomeController extends Controller
                 'active' => $mine()->where('status', LoanStatus::Active)->count(),
                 'due_today' => $mine()->where('status', LoanStatus::Active)->whereDate('due_on', '<=', today())->count(),
             ],
+            'unreadSops' => app(SopService::class)->unreadFor($user)->count(),
             'loans' => $mine()
                 ->with(['unit:id,code', 'customer:id,name'])
                 ->orderByRaw("case when status = 'active' then 0 else 1 end")

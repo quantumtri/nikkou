@@ -31,6 +31,8 @@ class AppServiceProvider extends ServiceProvider
             'loan' => Models\Loan::class,
             'lead' => Models\Lead::class,
             'customer' => Models\Customer::class,
+            'sop' => Models\Sop::class,
+            'sop_version' => Models\SopVersion::class,
         ]);
     }
 }
