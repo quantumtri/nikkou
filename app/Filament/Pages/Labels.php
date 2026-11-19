@@ -18,6 +18,8 @@ class Labels extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedQrCode;
 
+    protected static string|\UnitEnum|null $navigationGroup = 'Inventori';
+
     protected static ?string $navigationLabel = 'Label QR';
 
     protected static ?string $title = 'Label QR / barcode';

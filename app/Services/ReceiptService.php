@@ -580,6 +580,74 @@ class ReceiptService
         ];
     }
 
+    // ------------------------------------------------------------------ header, files, shelf, removal (used by the wizard)
+
+    /** @param  array{received_on?: ?string, po_number?: ?string, supplier?: ?string, forwarder?: ?string, tracking_number?: ?string, packages_expected?: ?int, packages_received?: ?int, from_paper?: bool}  $data */
+    public function updateHeader(GoodsReceipt $receipt, array $data): GoodsReceipt
+    {
+        $receipt->refresh();
+        $this->assertEditable($receipt);
+        $receipt->fill($data)->save();
+
+        return $receipt;
+    }
+
+    /**
+     * Make the stored files of one kind match the given paths (new paths added, missing ones removed).
+     *
+     * @param  array<int, string>  $paths
+     */
+    public function syncFiles(GoodsReceipt $receipt, string $kind, array $paths, ?int $itemId = null, ?string $documentType = null, ?int $findingId = null): void
+    {
+        $this->assertEditableForFiles($receipt);
+
+        $paths = array_values(array_filter($paths, fn ($p) => is_string($p) && $p !== ''));
+        $query = GoodsReceiptFile::query()
+            ->where('goods_receipt_id', $receipt->id)
+            ->where('kind', $kind)
+            ->where('goods_receipt_item_id', $itemId)
+            ->where('goods_receipt_finding_id', $findingId)
+            ->when($documentType, fn ($q) => $q->where('document_type', $documentType));
+
+        $existing = $query->get();
+
+        foreach ($existing->whereNotIn('file_path', $paths) as $gone) {
+            $gone->delete();
+        }
+
+        foreach (array_diff($paths, $existing->pluck('file_path')->all()) as $path) {
+            GoodsReceiptFile::create([
+                'goods_receipt_id' => $receipt->id,
+                'goods_receipt_item_id' => $itemId,
+                'goods_receipt_finding_id' => $findingId,
+                'kind' => $kind,
+                'document_type' => $documentType,
+                'file_path' => $path,
+                'original_name' => basename($path),
+            ]);
+        }
+    }
+
+    /** A row that is not saved as a unit yet can be taken out again. */
+    public function removeItem(GoodsReceiptItem $item): void
+    {
+        $this->assertEditable($item->receipt);
+        $this->assertNotSaved($item);
+        $item->delete();
+    }
+
+    /** Shelf can still be set after the unit exists, until the receipt is approved. */
+    public function setShelf(GoodsReceiptItem $item, ?string $shelf, User $actor): GoodsReceiptItem
+    {
+        $this->assertEditable($item->receipt);
+
+        $shelf = filled($shelf) ? trim($shelf) : null;
+        $item->forceFill(['shelf' => $shelf])->save();
+        $item->unit?->forceFill(['shelf' => $shelf])->save();
+
+        return $item;
+    }
+
     // ------------------------------------------------------------------ internals
 
     private function setStatus(GoodsReceipt $receipt, string $to, ?User $actor, ?string $note = null): void
@@ -598,6 +666,12 @@ class ReceiptService
         if ($receipt->status === GoodsReceipt::AWAITING_APPROVAL) {
             throw new ReceiptRuleViolation('Penerimaan sedang menunggu persetujuan dan tidak bisa diubah.');
         }
+    }
+
+    /** Files may still be attached while the receipt waits for approval? No: only while it is a draft or held. */
+    private function assertEditableForFiles(GoodsReceipt $receipt): void
+    {
+        $this->assertEditable($receipt);
     }
 
     private function assertNotSaved(GoodsReceiptItem $item): void
