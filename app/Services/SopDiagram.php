@@ -12,15 +12,15 @@ namespace App\Services;
  */
 class SopDiagram
 {
-    private const LABEL_W = 44;
+    private const LABEL_W = 52;
 
-    private const LANE_H = 132;
+    private const LANE_H = 170;
 
-    private const COL_W = 208;
+    private const COL_W = 268;
 
-    private const NODE_W = 168;
+    private const NODE_W = 220;
 
-    private const NODE_H = 66;
+    private const NODE_H = 90;
 
     private const PAD = 24;
 
@@ -65,7 +65,7 @@ class SopDiagram
             $out .= sprintf('<rect x="0" y="%d" width="%d" height="%d" class="lane-label-bg"/>', $y, self::LABEL_W, self::LANE_H);
             $out .= sprintf(
                 '<text transform="translate(%d %d) rotate(-90)" text-anchor="middle" class="lane-label">%s</text>',
-                self::LABEL_W / 2 + 5, $y + self::LANE_H / 2, e($this->clip($name, 18)),
+                self::LABEL_W / 2 + 6, $y + self::LANE_H / 2, e($this->clip($name, 22)),
             );
         }
 
@@ -199,18 +199,18 @@ class SopDiagram
         $x = $p['cx'] - self::NODE_W / 2;
         $y = $p['cy'] - self::NODE_H / 2;
         $attrs = sprintf('class="node node-%s%s" data-step="%s" tabindex="0" role="button" aria-label="%s"', $type, $problem ? ' problem' : '', e($key), e($s['title']));
-        $lines = $this->wrap($s['title'], $type === 'decision' ? 18 : 24, 3);
+        $lines = $this->wrap($s['title'], $type === 'decision' ? 20 : 26, 3);
 
         $text = '';
-        $lineH = 15;
-        $startY = $p['cy'] - (count($lines) - 1) * $lineH / 2 + 4.5;
+        $lineH = 19;
+        $startY = $p['cy'] - (count($lines) - 1) * $lineH / 2 + 5.5;
         foreach ($lines as $i => $line) {
             $text .= sprintf('<text x="%s" y="%s" text-anchor="middle" class="node-text">%s</text>', $p['cx'], $startY + $i * $lineH, e($line));
         }
 
         if ($type === 'decision') {
             $w = self::NODE_W;
-            $h = self::NODE_H + 18;
+            $h = self::NODE_H + 26;
             $pts = sprintf('%s,%s %s,%s %s,%s %s,%s', $p['cx'], $p['cy'] - $h / 2, $p['cx'] + $w / 2, $p['cy'], $p['cx'], $p['cy'] + $h / 2, $p['cx'] - $w / 2, $p['cy']);
 
             return "<g $attrs><polygon points=\"$pts\" class=\"shape\"/>$text</g>";
@@ -220,9 +220,9 @@ class SopDiagram
         $shape = sprintf('<rect x="%s" y="%s" width="%d" height="%d" rx="%d" class="shape"/>', $x, $y, self::NODE_W, self::NODE_H, $rx);
         $badge = '';
         if ($type === 'step' && ! empty($s['number'])) {
-            $badge = sprintf('<circle cx="%s" cy="%s" r="11" class="badge"/><text x="%s" y="%s" text-anchor="middle" class="badge-text">%s</text>', $x + 2, $y + 2, $x + 2, $y + 6, e($s['number']));
+            $badge = sprintf('<circle cx="%s" cy="%s" r="14" class="badge"/><text x="%s" y="%s" text-anchor="middle" class="badge-text">%s</text>', $x + 2, $y + 2, $x + 2, $y + 7, e($s['number']));
         }
-        $deadline = ! empty($s['deadline']) ? sprintf('<text x="%s" y="%s" text-anchor="middle" class="deadline">⏱ %s</text>', $p['cx'], $y + self::NODE_H - 6, e($this->clip($s['deadline'], 26))) : '';
+        $deadline = ! empty($s['deadline']) ? sprintf('<text x="%s" y="%s" text-anchor="middle" class="deadline">⏱ %s</text>', $p['cx'], $y + self::NODE_H - 8, e($this->clip($s['deadline'], 26))) : '';
 
         return "<g $attrs>$shape$badge$text$deadline</g>";
     }
@@ -259,7 +259,7 @@ class SopDiagram
     {
         $css = <<<'CSS'
 .lane{fill:#fff}.lane1{fill:#f8f9fb}.lane-label-bg{fill:#eef0f4;stroke:#d9dde4}
-.lane-label{font:600 12px Outfit,Arial,sans-serif;fill:#3b4350}
+.lane-label{font:600 15px Outfit,Arial,sans-serif;fill:#3b4350}
 .muted{font:14px Outfit,Arial,sans-serif;fill:#6b7480}
 .node{cursor:pointer;outline:none}
 .node .shape{fill:#fff;stroke:#cfd5de;stroke-width:1.5}
@@ -268,12 +268,12 @@ class SopDiagram
 .node.problem .shape{fill:#fde7ea;stroke:#e88a95}
 .node-start .shape{fill:#e3f5ea;stroke:#7cc59a}.node-end .shape{fill:#2d3440;stroke:#2d3440}
 .node-end .node-text{fill:#fff}
-.node-text{font:500 12.5px Outfit,Arial,sans-serif;fill:#1f2630;pointer-events:none}
-.badge{fill:#c8102e}.badge-text{font:700 12px Outfit,Arial,sans-serif;fill:#fff;pointer-events:none}
-.deadline{font:500 10.5px Outfit,Arial,sans-serif;fill:#8a4b00;pointer-events:none}
-.edge{fill:none;stroke:#59616f;stroke-width:1.6}
+.node-text{font:500 15.5px Outfit,Arial,sans-serif;fill:#1f2630;pointer-events:none}
+.badge{fill:#c8102e}.badge-text{font:700 14px Outfit,Arial,sans-serif;fill:#fff;pointer-events:none}
+.deadline{font:500 12.5px Outfit,Arial,sans-serif;fill:#8a4b00;pointer-events:none}
+.edge{fill:none;stroke:#59616f;stroke-width:2}
 .edge.problem{stroke:#d0312d}.edge.delayed{stroke:#7b8494;stroke-dasharray:6 4}
-.edge-label{font:500 11px Outfit,Arial,sans-serif;fill:#3b4350;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
+.edge-label{font:500 13px Outfit,Arial,sans-serif;fill:#3b4350;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round}
 .edge-label.problem{fill:#b3201c}
 CSS;
         $marker = fn (string $t, string $c) => sprintf('<marker id="arrow-%s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="%s"/></marker>', $t, $c);
