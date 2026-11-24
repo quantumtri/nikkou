@@ -76,6 +76,7 @@ class DatabaseSeeder extends Seeder
         $this->seedLoans();
         $this->seedReceipt();
 
+        $this->call(LeadSeeder::class);
         $this->call(SopSeeder::class);
     }
 

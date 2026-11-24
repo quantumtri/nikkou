@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\AgeRange;
+use App\Enums\Gender;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'whatsapp_number', 'address', 'city', 'district', 'lat', 'lng', 'data_consent_at', 'whatsapp_consent_at'])]
+#[Fillable(['name', 'whatsapp_number', 'address', 'city', 'province', 'gender', 'age_range', 'district', 'lat', 'lng', 'data_consent_at', 'whatsapp_consent_at'])]
 class Customer extends Model
 {
     use HasFactory;
@@ -15,6 +17,8 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
+            'gender' => Gender::class,
+            'age_range' => AgeRange::class,
             'data_consent_at' => 'datetime',
             'whatsapp_consent_at' => 'datetime',
         ];

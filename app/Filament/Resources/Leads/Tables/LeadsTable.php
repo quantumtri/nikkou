@@ -1,0 +1,58 @@
+<?php
+
+namespace App\Filament\Resources\Leads\Tables;
+
+use App\Enums\LeadStatus;
+use App\Enums\OverallResponse;
+use App\Models\Lead;
+use App\Models\Product;
+use App\Models\User;
+use Filament\Actions\EditAction;
+use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
+
+class LeadsTable
+{
+    public static function configure(Table $table): Table
+    {
+        return $table
+            ->defaultSort('id', 'desc')
+            ->searchPlaceholder('Cari nama')
+            ->columns([
+                TextColumn::make('customer.name')->label('Nama')->searchable()->sortable(),
+                TextColumn::make('location')->label('Kota, provinsi')
+                    ->state(fn (Lead $r) => collect([$r->customer->city, $r->customer->province])->filter()->implode(', ') ?: '-'),
+                TextColumn::make('customer.gender')->label('Gender')->formatStateUsing(fn ($state) => $state?->label() ?? '-'),
+                TextColumn::make('product')->label('Mencoba produk')->state(fn (Lead $r) => $r->productName() ?? '-')->wrap(),
+                TextColumn::make('trial_start')->label('Mulai coba')
+                    ->state(fn (Lead $r) => $r->trialStart()?->locale('id')->translatedFormat('j M Y') ?? '-'),
+                TextColumn::make('customer.age_range')->label('Usia')->formatStateUsing(fn ($state) => $state?->value ?? '-'),
+                IconColumn::make('symptom_form_filled')->label('Form gejala')->boolean()->alignCenter(),
+                TextColumn::make('status')->label('Status')->badge()
+                    ->formatStateUsing(fn (LeadStatus $state) => $state->label())
+                    ->color(fn (LeadStatus $state) => match ($state) {
+                        LeadStatus::Purchased => 'success',
+                        LeadStatus::Cancelled => 'danger',
+                        LeadStatus::New => 'gray',
+                        default => 'info',
+                    }),
+                TextColumn::make('followup_count')->label('Follow-up')->suffix(' kali')->alignCenter()->sortable(),
+                TextColumn::make('overall_response')->label('Response')->badge()
+                    ->placeholder('-')
+                    ->formatStateUsing(fn (?OverallResponse $state) => $state?->label())
+                    ->color(fn (?OverallResponse $state) => $state?->color() ?? 'gray'),
+                TextColumn::make('sales.name')->label('Sales')->toggleable(),
+            ])
+            ->filters([
+                SelectFilter::make('status')->label('Status')->options(LeadStatus::options()),
+                SelectFilter::make('overall_response')->label('Response')->options(OverallResponse::options()),
+                SelectFilter::make('product_id')->label('Produk')->options(fn () => Product::orderBy('name')->pluck('name', 'id')),
+                SelectFilter::make('sales_id')->label('Sales')->options(fn () => User::where('role', 'sales')->orderBy('name')->pluck('name', 'id')),
+                SelectFilter::make('symptom_form_filled')->label('Form gejala')->options(['1' => 'Sudah', '0' => 'Belum']),
+            ])
+            ->recordActions([EditAction::make()->label('Ubah')])
+            ->recordUrl(null);
+    }
+}

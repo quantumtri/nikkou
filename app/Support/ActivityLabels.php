@@ -14,6 +14,8 @@ class ActivityLabels
         'unit.status_changed' => 'Status berubah',
         'unit.status_overridden' => 'Override admin',
         'unit.label_printed' => 'Label dicetak',
+        'lead.created' => 'Lead ditambah',
+        'lead.status_changed' => 'Status lead berubah',
         'loan.created' => 'Dipinjam',
         'loan.returned' => 'Pengembalian',
         'loan.created_by_override' => 'Dipinjam (override admin)',
