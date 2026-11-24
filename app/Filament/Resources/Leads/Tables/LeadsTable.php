@@ -43,7 +43,7 @@ class LeadsTable
                     ->placeholder('-')
                     ->formatStateUsing(fn (?OverallResponse $state) => $state?->label())
                     ->color(fn (?OverallResponse $state) => $state?->color() ?? 'gray'),
-                TextColumn::make('sales.name')->label('Sales')->toggleable(),
+                TextColumn::make('sales.name')->label('Sales')->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
                 SelectFilter::make('status')->label('Status')->options(LeadStatus::options()),
