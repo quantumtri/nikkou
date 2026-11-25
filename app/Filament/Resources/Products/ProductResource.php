@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products;
 use App\Enums\ProductCategory;
 use App\Filament\Resources\Products\Pages\ManageProducts;
 use App\Models\Product;
+use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
@@ -43,6 +44,8 @@ class ProductResource extends Resource
         return $schema->components([
             TextInput::make('name')->label('Nama produk')->required()->maxLength(255)->unique(ignoreRecord: true),
             Select::make('category')->label('Kategori')->options(ProductCategory::options())->required()->selectablePlaceholder(false),
+            TextInput::make('price')->label('Harga')->numeric()->minValue(0)->maxValue(1000000000)->default(0)->prefix('Rp')->required()
+                ->helperText('Harga jual saat ini. Invoice menyimpan salinan harganya sendiri.'),
             Toggle::make('is_active')->label('Aktif')->default(true),
         ]);
     }
@@ -55,6 +58,7 @@ class ProductResource extends Resource
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('category')->label('Kategori')->badge()->formatStateUsing(fn (ProductCategory $state) => $state->label())
                     ->color(fn (ProductCategory $state) => $state === ProductCategory::Main ? 'primary' : 'gray'),
+                TextColumn::make('price')->label('Harga')->formatStateUsing(fn ($state) => Rupiah::format($state))->sortable(),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])
             ->filters([SelectFilter::make('category')->label('Kategori')->options(ProductCategory::options())])

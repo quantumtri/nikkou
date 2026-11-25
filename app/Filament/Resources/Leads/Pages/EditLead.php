@@ -12,10 +12,15 @@ class EditLead extends EditRecord
 {
     protected static string $resource = LeadResource::class;
 
+    protected function getRedirectUrl(): string
+    {
+        return LeadResource::getUrl('view', ['record' => $this->getRecord()]);
+    }
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
         /** @var Lead $lead */
-        $lead = $this->getRecord()->load('customer');
+        $lead = $this->getRecord()->load('customer', 'accessories');
         $c = $lead->customer;
 
         return $data + [
@@ -25,13 +30,15 @@ class EditLead extends EditRecord
             'province' => $c->province,
             'gender' => $c->gender?->value,
             'age_range' => $c->age_range?->value,
+            'path' => $lead->path->value,
+            'accessories' => $lead->accessories->map(fn ($p) => ['product_id' => $p->id, 'quantity' => $p->pivot->quantity])->all(),
         ];
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $service = app(LeadService::class);
-        $data = $service->validate($data, withSales: true);
+        $data = $service->validate($data + ['path' => $record->path->value], withSales: true);
 
         if ((int) $data['sales_id'] !== $record->sales_id) {
             $record->forceFill(['sales_id' => $data['sales_id']])->save();

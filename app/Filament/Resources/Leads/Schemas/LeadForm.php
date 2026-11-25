@@ -5,13 +5,15 @@ namespace App\Filament\Resources\Leads\Schemas;
 use App\Enums\AgeRange;
 use App\Enums\Gender;
 use App\Enums\LeadCancelReason;
+use App\Enums\LeadPath;
 use App\Enums\LeadStatus;
-use App\Enums\OverallResponse;
+use App\Enums\ProductCategory;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\Provinces;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -33,12 +35,23 @@ class LeadForm
                 Select::make('age_range')->label('Range usia')->options(AgeRange::options())->required(),
             ]),
 
-            Section::make('Trial')->columns(2)->schema([
-                Select::make('product_id')->label('Mencoba produk apa')->options(fn () => Product::groupedOptions())->searchable()->required(),
-                DatePicker::make('trial_started_on')->label('Mulai coba tanggal'),
+            Section::make('Produk')->columns(2)->schema([
+                Radio::make('path')->label('Jalur')->options(LeadPath::options())->default(LeadPath::Trial->value)->inline()->required()->live()
+                    ->disabled(fn (string $operation) => $operation === 'edit')->dehydrated()
+                    ->helperText('Trial: dicoba dulu. Beli langsung: invoice dibuat otomatis.')->columnSpanFull(),
+                Select::make('product_id')->label(fn ($get) => $get('path') === LeadPath::Direct->value ? 'Produk yang dibeli' : 'Mencoba produk apa')
+                    ->options(fn () => Product::active()->ofCategory(ProductCategory::Main)->orderBy('name')->pluck('name', 'id'))->searchable()->required()
+                    ->helperText('Hanya produk utama. Aksesoris dipilih di bawah.'),
+                DatePicker::make('trial_started_on')->label('Mulai coba tanggal')->visible(fn ($get) => $get('path') !== LeadPath::Direct->value),
+                Repeater::make('accessories')->label(fn ($get) => $get('path') === LeadPath::Direct->value ? 'Aksesoris (masuk invoice)' : 'Aksesoris (dibawa saat trial)')
+                    ->columnSpanFull()->addActionLabel('Tambah aksesoris')->defaultItems(0)->columns(3)
+                    ->schema([
+                        Select::make('product_id')->label('Aksesoris')->required()->columnSpan(2)
+                            ->options(fn () => Product::active()->ofCategory(ProductCategory::Accessory)->orderBy('name')->pluck('name', 'id')),
+                        TextInput::make('quantity')->label('Jumlah')->numeric()->minValue(1)->maxValue(99)->default(1)->required(),
+                    ]),
                 Toggle::make('symptom_form_filled')->label('Sudah isi form gejala awal?')
                     ->helperText('Nanti tersambung ke form gejala. Untuk sementara diisi manual.'),
-                TextInput::make('followup_count')->label('Follow-up pemakaian (kali)')->numeric()->minValue(0)->maxValue(999)->default(0),
             ]),
 
             Section::make('Status')->columns(2)->schema([
@@ -46,7 +59,6 @@ class LeadForm
                 Select::make('cancel_reason')->label('Alasan batal')->options(LeadCancelReason::options())
                     ->visible(fn ($get) => $get('status') === LeadStatus::Cancelled->value)
                     ->required(fn ($get) => $get('status') === LeadStatus::Cancelled->value),
-                Select::make('overall_response')->label('Overall response')->options(OverallResponse::options())->placeholder('Belum ada'),
                 Select::make('sales_id')->label('Sales')->required()
                     ->options(fn () => User::where('role', 'sales')->where('is_active', true)->orderBy('name')->pluck('name', 'id')),
                 Textarea::make('notes')->label('Catatan')->rows(2)->maxLength(2000)->columnSpanFull(),

@@ -14,6 +14,11 @@ class CreateLead extends CreateRecord
 
     protected static bool $canCreateAnother = false;
 
+    protected function getRedirectUrl(): string
+    {
+        return LeadResource::getUrl('view', ['record' => $this->getRecord()]);
+    }
+
     protected function handleRecordCreation(array $data): Model
     {
         $service = app(LeadService::class);
