@@ -5,8 +5,9 @@ namespace App\Services;
 use App\Enums\AgeRange;
 use App\Enums\Gender;
 use App\Enums\LeadCancelReason;
+use App\Enums\LeadPath;
 use App\Enums\LeadStatus;
-use App\Enums\OverallResponse;
+use App\Enums\ProductCategory;
 use App\Models\ActivityLog;
 use App\Models\Customer;
 use App\Models\Lead;
@@ -30,13 +31,16 @@ class LeadService
             'province' => ['required', 'string', 'max:100'],
             'gender' => ['required', Rule::enum(Gender::class)],
             'age_range' => ['required', Rule::enum(AgeRange::class)],
-            'product_id' => ['required', Rule::exists('products', 'id')->where('is_active', true)],
+            'path' => ['required', Rule::enum(LeadPath::class)],
+            // The product tried or bought is always a main product; accessories are listed separately.
+            'product_id' => ['required', Rule::exists('products', 'id')->where('is_active', true)->where('category', ProductCategory::Main->value)],
+            'accessories' => ['nullable', 'array', 'max:20'],
+            'accessories.*.product_id' => ['required', 'distinct', Rule::exists('products', 'id')->where('is_active', true)->where('category', ProductCategory::Accessory->value)],
+            'accessories.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
             'trial_started_on' => ['nullable', 'date'],
             'symptom_form_filled' => ['boolean'],
             'status' => ['required', Rule::enum(LeadStatus::class)],
             'cancel_reason' => ['nullable', Rule::enum(LeadCancelReason::class), 'required_if:status,cancelled'],
-            'followup_count' => ['nullable', 'integer', 'min:0', 'max:999'],
-            'overall_response' => ['nullable', Rule::enum(OverallResponse::class)],
             'notes' => ['nullable', 'string', 'max:2000'],
             ...($withSales ? ['sales_id' => ['required', Rule::exists('users', 'id')->where('role', 'sales')->where('is_active', true)]] : []),
         ];
@@ -48,6 +52,7 @@ class LeadService
     {
         return Validator::make($input, self::rules($withSales), [
             'cancel_reason.required_if' => 'Alasan batal wajib diisi bila status Batal.',
+            'product_id.exists' => 'Pilih produk utama. Aksesoris diisi di bagian Aksesoris.',
         ])->validate();
     }
 
@@ -65,9 +70,16 @@ class LeadService
                 'customer_id' => $customer->id,
                 'sales_id' => $owner->id,
                 'source' => 'manual',
+                'path' => $data['path'],
             ]);
+            $this->syncAccessories($lead, $data['accessories'] ?? []);
 
-            ActivityLog::record($lead, 'lead.created', $by, null, $lead->status->value, 'Lead ditambah manual.');
+            ActivityLog::record($lead, 'lead.created', $by, null, $lead->status->value, 'Lead ditambah manual ('.$lead->path->label().').');
+
+            // A direct purchase skips the trial: the invoice is issued right away.
+            if ($lead->path === LeadPath::Direct) {
+                app(InvoiceService::class)->createForLead($lead, $this->invoiceLines($lead), $by);
+            }
 
             return $lead->refresh();
         });
@@ -82,6 +94,7 @@ class LeadService
 
             $lead->customer->update($this->customerData($data));
             $lead->update($this->leadData($data));
+            $this->syncAccessories($lead, $data['accessories'] ?? []);
 
             if ($from !== $lead->status) {
                 ActivityLog::record($lead, 'lead.status_changed', $by, $from->value, $lead->status->value, $lead->cancel_reason?->label());
@@ -113,13 +126,31 @@ class LeadService
 
         return [
             'product_id' => Product::findOrFail($d['product_id'])->id,
-            'trial_started_on' => $d['trial_started_on'] ?? null,
+            // A direct purchase has no trial. The path itself is fixed once the lead exists.
+            'trial_started_on' => ($d['path'] ?? 'trial') === LeadPath::Direct->value ? null : ($d['trial_started_on'] ?? null),
             'symptom_form_filled' => (bool) ($d['symptom_form_filled'] ?? false),
             'status' => $d['status'],
             'cancel_reason' => $cancelled ? $d['cancel_reason'] : null,
-            'followup_count' => (int) ($d['followup_count'] ?? 0),
-            'overall_response' => $d['overall_response'] ?? null,
             'notes' => $d['notes'] ?? null,
         ];
+    }
+
+    /** @param  array<int, array{product_id: int|string, quantity: int|string}>  $rows */
+    private function syncAccessories(Lead $lead, array $rows): void
+    {
+        $lead->accessories()->sync(collect($rows)->mapWithKeys(
+            fn ($r) => [(int) $r['product_id'] => ['quantity' => (int) $r['quantity']]]
+        )->all());
+    }
+
+    /** Main product plus accessories, priced from the catalog (the invoice keeps its own copy). @return array<int, array<string, int>> */
+    private function invoiceLines(Lead $lead): array
+    {
+        $lead->load('accessories');
+
+        return collect([['product_id' => $lead->product_id, 'quantity' => 1]])
+            ->merge($lead->accessories->map(fn (Product $p) => ['product_id' => $p->id, 'quantity' => $p->pivot->quantity]))
+            ->map(fn ($l) => $l + ['unit_price' => Product::findOrFail($l['product_id'])->price])
+            ->all();
     }
 }

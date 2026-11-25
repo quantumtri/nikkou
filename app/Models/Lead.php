@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\LeadCancelReason;
+use App\Enums\LeadPath;
 use App\Enums\LeadStatus;
 use App\Enums\OverallResponse;
 use App\Models\Concerns\OwnedBySales;
@@ -10,20 +11,29 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
-#[Fillable(['customer_id', 'sales_id', 'status', 'cancel_reason', 'cancel_note', 'notes', 'source', 'product_id', 'trial_started_on', 'symptom_form_filled', 'followup_count', 'overall_response'])]
+#[Fillable(['customer_id', 'sales_id', 'status', 'cancel_reason', 'cancel_note', 'notes', 'source', 'product_id', 'trial_started_on', 'symptom_form_filled', 'followup_count', 'overall_response', 'code', 'path'])]
 class Lead extends Model
 {
     use HasFactory, OwnedBySales;
 
-    protected $attributes = ['status' => 'new'];
+    protected $attributes = ['status' => 'new', 'path' => 'trial'];
+
+    protected static function booted(): void
+    {
+        static::creating(function (Lead $lead) {
+            $lead->code ??= Sequence::code('LD', 'lead');
+        });
+    }
 
     protected function casts(): array
     {
         return [
             'status' => LeadStatus::class,
+            'path' => LeadPath::class,
             'cancel_reason' => LeadCancelReason::class,
             'overall_response' => OverallResponse::class,
             'trial_started_on' => 'date',
@@ -44,6 +54,22 @@ class Lead extends Model
     public function sales(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sales_id');
+    }
+
+    /** Accessories carried on trial, or put on the invoice for a direct purchase. */
+    public function accessories(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'lead_accessories')->withPivot('quantity');
+    }
+
+    public function followUps(): HasMany
+    {
+        return $this->hasMany(LeadFollowUp::class)->orderByDesc('followed_up_on')->orderByDesc('id');
+    }
+
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class)->latest('id');
     }
 
     public function loans(): HasMany

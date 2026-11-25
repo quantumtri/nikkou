@@ -31,4 +31,12 @@ class Sequence extends Model
             return $value;
         });
     }
+
+    /** Yearly document number, e.g. LD-2026-0001. */
+    public static function code(string $prefix, string $name): string
+    {
+        $year = now()->format('Y');
+
+        return sprintf('%s-%s-%04d', $prefix, $year, static::next("$name.$year"));
+    }
 }

@@ -31,6 +31,7 @@ class AppServiceProvider extends ServiceProvider
             'loan' => Models\Loan::class,
             'lead' => Models\Lead::class,
             'customer' => Models\Customer::class,
+            'invoice' => Models\Invoice::class,
             'sop' => Models\Sop::class,
             'sop_version' => Models\SopVersion::class,
             'goods_receipt' => Models\GoodsReceipt::class,
