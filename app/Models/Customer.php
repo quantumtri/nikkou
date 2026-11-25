@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['name', 'whatsapp_number', 'address', 'city', 'province', 'gender', 'age_range', 'district', 'lat', 'lng', 'data_consent_at', 'whatsapp_consent_at'])]
+#[Fillable(['name', 'whatsapp_number', 'address', 'city', 'province', 'gender', 'age_range', 'district', 'lat', 'lng', 'data_consent_at', 'whatsapp_consent_at', 'birth_date', 'email', 'referred_by'])]
 class Customer extends Model
 {
     use HasFactory;
@@ -19,6 +19,7 @@ class Customer extends Model
         return [
             'gender' => Gender::class,
             'age_range' => AgeRange::class,
+            'birth_date' => 'date',
             'data_consent_at' => 'datetime',
             'whatsapp_consent_at' => 'datetime',
         ];

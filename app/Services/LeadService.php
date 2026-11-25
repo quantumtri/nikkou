@@ -39,7 +39,6 @@ class LeadService
             'accessories.*.product_id' => ['required', 'distinct', Rule::exists('products', 'id')->where('is_active', true)->where('category', ProductCategory::Accessory->value)],
             'accessories.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
             'trial_started_on' => ['nullable', 'date'],
-            'symptom_form_filled' => ['boolean'],
             'status' => ['required', Rule::enum(LeadStatus::class)],
             'cancel_reason' => ['nullable', Rule::enum(LeadCancelReason::class), 'required_if:status,cancelled'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -138,7 +137,6 @@ class LeadService
             'product_id' => Product::findOrFail($d['product_id'])->id,
             // A direct purchase has no trial. The path itself is fixed once the lead exists.
             'trial_started_on' => ($d['path'] ?? 'trial') === LeadPath::Direct->value ? null : ($d['trial_started_on'] ?? null),
-            'symptom_form_filled' => (bool) ($d['symptom_form_filled'] ?? false),
             'status' => $d['status'],
             'cancel_reason' => $cancelled ? $d['cancel_reason'] : null,
             'notes' => $d['notes'] ?? null,

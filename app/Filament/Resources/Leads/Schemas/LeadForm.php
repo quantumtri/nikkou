@@ -18,7 +18,6 @@ use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 
@@ -58,8 +57,6 @@ class LeadForm
                             ->options(fn () => Product::active()->ofCategory(ProductCategory::Accessory)->orderBy('name')->pluck('name', 'id')),
                         TextInput::make('quantity')->label('Jumlah')->numeric()->minValue(1)->maxValue(99)->default(1)->required(),
                     ]),
-                Toggle::make('symptom_form_filled')->label('Sudah isi form gejala awal?')
-                    ->helperText('Nanti tersambung ke form gejala. Untuk sementara diisi manual.'),
             ]),
 
             Section::make('Status')->columns(2)->schema([

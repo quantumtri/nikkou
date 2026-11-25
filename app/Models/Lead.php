@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 #[Fillable(['customer_id', 'sales_id', 'status', 'cancel_reason', 'cancel_note', 'notes', 'source', 'product_id', 'trial_started_on', 'symptom_form_filled', 'followup_count', 'overall_response', 'code', 'path'])]
@@ -60,6 +61,11 @@ class Lead extends Model
     public function accessories(): BelongsToMany
     {
         return $this->belongsToMany(Product::class, 'lead_accessories')->withPivot('quantity');
+    }
+
+    public function symptomForm(): HasOne
+    {
+        return $this->hasOne(SymptomForm::class);
     }
 
     public function followUps(): HasMany

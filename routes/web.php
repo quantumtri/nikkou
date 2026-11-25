@@ -11,6 +11,7 @@ use App\Http\Controllers\Sales\LeadController;
 use App\Http\Controllers\Sales\LoanController;
 use App\Http\Controllers\Sales\ReturnController;
 use App\Http\Controllers\Sales\SopController;
+use App\Http\Controllers\Sales\SymptomFormController;
 use App\Http\Controllers\UnitFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -66,6 +67,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('/leads', [LeadController::class, 'store'])->name('leads.store');
         Route::get('/leads/{lead}', [LeadController::class, 'show'])->whereNumber('lead')->name('leads.show');
         Route::post('/leads/{lead}/followups', [LeadController::class, 'storeFollowUp'])->whereNumber('lead')->name('leads.followups.store');
+        Route::get('/leads/{lead}/symptom-form', [SymptomFormController::class, 'edit'])->whereNumber('lead')->name('leads.symptom-form.edit');
+        Route::put('/leads/{lead}/symptom-form', [SymptomFormController::class, 'update'])->whereNumber('lead')->name('leads.symptom-form.update');
         Route::get('/leads/{lead}/edit', [LeadController::class, 'edit'])->name('leads.edit');
         Route::put('/leads/{lead}', [LeadController::class, 'update'])->name('leads.update');
     });

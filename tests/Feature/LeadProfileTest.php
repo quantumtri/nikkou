@@ -24,7 +24,7 @@ beforeEach(function () {
         'name' => 'Siti Rahmawati', 'whatsapp_number' => '0812 3000 0201', 'city' => 'Surabaya', 'province' => 'Jawa Timur',
         'gender' => 'female', 'age_range' => '40-49', 'path' => 'trial', 'product_id' => $this->home->id, 'trial_started_on' => '2026-11-10',
         'accessories' => [['product_id' => $this->kanula->id, 'quantity' => 2]],
-        'symptom_form_filled' => true, 'status' => 'trial_active',
+        'status' => 'trial_active',
         ...$o,
     ];
 });
@@ -42,7 +42,7 @@ it('creates a lead with all ten profile fields and logs it', function () {
         ->and($lead->customer->whatsapp_number)->toBe('081230000201')
         ->and($lead->product->name)->toBe('H2 Home')
         ->and($lead->trial_started_on->toDateString())->toBe('2026-11-10')
-        ->and($lead->symptom_form_filled)->toBeTrue()
+        ->and($lead->symptom_form_filled)->toBeFalse()
         ->and($lead->status->value)->toBe('trial_active')
         ->and($lead->code)->toMatch('/^LD-\d{4}-\d{4}$/')
         ->and($lead->path->value)->toBe('trial')
@@ -129,7 +129,7 @@ describe('sales app', function () {
             ->component('Sales/Leads/Index')->has('leads', 1)
             ->where('leads.0.name', 'Siti Rahmawati')->where('leads.0.product', 'H2 Home')
             ->where('leads.0.followup_count', 0)->where('leads.0.code', fn ($c) => str_starts_with($c, 'LD-'))
-            ->where('leads.0.symptom_form_filled', true));
+            ->where('leads.0.symptom_form_filled', false));
     });
 
     it('lets sales edit their own lead but not someone else’s', function () {

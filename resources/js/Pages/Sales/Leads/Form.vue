@@ -32,7 +32,6 @@ const form = useForm({
     unit_id: '',
     accessories: (props.lead?.accessories ?? []).map((a) => ({ ...a })),
     trial_started_on: props.lead?.trial_started_on ?? props.today,
-    symptom_form_filled: props.lead?.symptom_form_filled ?? false,
     status: props.lead?.status ?? 'new',
     cancel_reason: props.lead?.cancel_reason ?? '',
     notes: props.lead?.notes ?? '',
@@ -141,10 +140,7 @@ const submit = () => (editing.value ? form.put(`/sales/leads/${props.lead.id}`) 
             </ul>
             <p v-if="form.errors.accessories" class="field-error" role="alert">{{ form.errors.accessories }}</p>
 
-            <label class="mt-4 flex min-h-[44px] items-center gap-3">
-                <input v-model="form.symptom_form_filled" type="checkbox" class="h-5 w-5" />
-                <span>Sudah isi form gejala awal</span>
-            </label>
+            <p class="mt-4 text-sm text-nikkou-muted">Form gejala awal diisi dari halaman detail lead, setelah lead disimpan.</p>
 
             <h2 class="section-title"><span class="step">3</span>Status</h2>
             <label for="status" class="field-label">Status lead</label>

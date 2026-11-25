@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\FollowUpService;
 use App\Services\InvoiceService;
 use App\Services\LeadService;
+use App\Services\SymptomFormService;
 use Illuminate\Database\Seeder;
 
 /** Product catalog plus realistic sample leads for demo and UAT (fictional people). */
@@ -46,6 +47,7 @@ class LeadSeeder extends Seeder
         $service = app(LeadService::class);
         $followUps = app(FollowUpService::class);
         $invoices = app(InvoiceService::class);
+        $symptomForms = app(SymptomFormService::class);
         $admin = User::where('email', 'admin@nikkou.test')->first();
         $id = fn (string $name) => Product::where('name', $name)->value('id');
 
@@ -61,6 +63,14 @@ class LeadSeeder extends Seeder
             [$rizky, 'Joko Santoso', 'Semarang', 'Jawa Tengah', 'male', '50-59', 'H2 Home', [], 14, true, 'offer_sent', ['positive', 'neutral', 'neutral', 'neutral']],
         ];
 
+        // Realistic ticked conditions for a few demo leads; the rest get a light default.
+        $sampleConditions = [
+            'Siti Rahmawati' => ['symptoms' => ['poor_sleep_quality', 'easily_tired'], 'cardiovascular' => ['high_bp'], 'tumor' => ['none']],
+            'Bambang Hartono' => ['metabolic' => ['diabetes', 'gout'], 'musculoskeletal' => ['osteoarthritis'], 'other_health' => ['long_term_meds'], 'tumor' => ['none']],
+            'Agus Prasetyo' => ['cardiovascular' => ['high_bp', 'high_cholesterol'], 'respiratory' => ['sleep_apnea'], 'tumor' => ['none']],
+            'Maria Gunawan' => ['nervous' => ['insomnia', 'anxiety'], 'immune' => ['allergic_rhinitis'], 'tumor' => ['none']],
+        ];
+
         foreach ($rows as [$sales, $name, $city, $province, $gender, $age, $product, $accessories, $daysAgo, $symptom, $status, $responses]) {
             $lead = $service->create($service->validate([
                 'name' => $name, 'city' => $city, 'province' => $province, 'gender' => $gender, 'age_range' => $age,
@@ -69,6 +79,17 @@ class LeadSeeder extends Seeder
                 'symptom_form_filled' => $symptom, 'status' => $status,
                 'cancel_reason' => $status === 'cancelled' ? 'price_too_high' : null,
             ]), $sales);
+
+            if ($symptom) {
+                $form = [
+                    'name' => $name, 'gender' => $gender, 'city' => $city, 'consent_data' => true, 'consent_whatsapp' => true,
+                    'filled_on' => today()->subDays($daysAgo)->toDateString(), 'activity_on' => today()->subDays($daysAgo)->toDateString(),
+                    'session_location' => 'Sesi penjelasan '.$city, 'machine_taken_on' => today()->subDays($daysAgo)->toDateString(),
+                    'conditions' => $sampleConditions[$name] ?? ['symptoms' => ['sleep_difficulty', 'easily_tired'], 'tumor' => ['none']],
+                    'sales_notes' => 'Peserta antusias, minta dihubungi sore hari.',
+                ];
+                $symptomForms->save($lead, $symptomForms->validate($form, $lead), $sales);
+            }
 
             foreach ($responses as $i => $response) {
                 $followUps->add($lead, $followUps->validate([

@@ -60,7 +60,7 @@ class LeadResource extends Resource
     {
         return parent::getEloquentQuery()
             ->visibleTo(auth()->user())
-            ->with(['customer', 'product', 'accessories', 'sales:id,name', 'loans.unit.type']);
+            ->with(['customer', 'product', 'accessories', 'symptomForm', 'sales:id,name', 'loans.unit.type']);
     }
 
     public static function canViewAny(): bool

@@ -59,7 +59,7 @@ class LeadController extends Controller
     public function show(Lead $lead): Response
     {
         Gate::authorize('view', $lead);
-        $lead->load(['customer', 'product', 'accessories', 'loans.unit.type', 'followUps.user:id,name', 'invoices']);
+        $lead->load(['customer', 'product', 'accessories', 'loans.unit.type', 'followUps.user:id,name', 'invoices', 'symptomForm']);
         $c = $lead->customer;
 
         return Inertia::render('Sales/Leads/Show', [
@@ -76,6 +76,8 @@ class LeadController extends Controller
                 'trial_start' => $lead->trialStart()?->locale('id')->translatedFormat('j M Y'),
                 'accessories' => $lead->accessories->map(fn ($p) => $p->name.' x'.$p->pivot->quantity)->values(),
                 'symptom_form_filled' => $lead->symptom_form_filled,
+                'symptom_form_code' => $lead->symptomForm?->code,
+                'symptom_summary' => $lead->symptomForm?->summaryLines() ?? [],
                 'status' => $lead->status->value,
                 'status_label' => $lead->status->label(),
                 'followup_count' => $lead->followup_count,

@@ -42,9 +42,19 @@ class LeadInfolist
 
             Section::make('Form gejala awal')->columns(3)->schema([
                 IconEntry::make('symptom_form_filled')->label('Sudah diisi?')->boolean(),
-                TextEntry::make('symptom_note')->label('Isi form')->columnSpan(2)
-                    ->state('Isi form gejala akan tampil di sini setelah form gejala dibuat dan disambungkan.')
-                    ->color('gray'),
+                TextEntry::make('symptomForm.code')->label('No. dokumen')->fontFamily('mono')->placeholder('-'),
+                TextEntry::make('symptomForm.filled_on')->label('Tanggal form')->date('j F Y')->placeholder('-'),
+                TextEntry::make('symptomForm.session_location')->label('Sesi / lokasi')->placeholder('-')
+                    ->visible(fn (Lead $r) => $r->symptomForm !== null),
+                TextEntry::make('symptomForm.unit.code')->label('Mesin (ID inventori)')->fontFamily('mono')->placeholder('-')
+                    ->visible(fn (Lead $r) => $r->symptomForm !== null),
+                TextEntry::make('symptomForm.machine_taken_on')->label('Mesin dibawa pulang')->date('j F Y')->placeholder('-')
+                    ->visible(fn (Lead $r) => $r->symptomForm !== null),
+                TextEntry::make('survey')->label('Kondisi kesehatan yang dicentang')->columnSpanFull()
+                    ->state(fn (Lead $r) => $r->symptomForm ? ($r->symptomForm->summaryLines() ?: ['Tidak ada yang dicentang.']) : ['Form belum diisi. Pakai tombol "Isi form gejala" di atas.'])
+                    ->listWithLineBreaks()->color(fn (Lead $r) => $r->symptomForm ? null : 'gray'),
+                TextEntry::make('symptomForm.sales_notes')->label('Catatan sales')->columnSpanFull()->placeholder('-')
+                    ->visible(fn (Lead $r) => $r->symptomForm !== null),
             ]),
 
             Section::make('Status')->columns(3)->schema([

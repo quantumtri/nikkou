@@ -43,10 +43,15 @@ const submit = () => form.post(`/sales/leads/${props.lead.id}/followups`, {
                 <dt class="text-xs text-nikkou-muted">{{ lead.path === 'direct' ? 'Aksesoris (masuk invoice)' : 'Aksesoris dibawa saat trial' }}</dt>
                 <dd><template v-if="lead.accessories.length">{{ lead.accessories.join(', ') }}</template><template v-else>-</template></dd>
             </div>
-            <div><dt class="text-xs text-nikkou-muted">Form gejala awal</dt><dd>{{ lead.symptom_form_filled ? 'Sudah' : 'Belum' }}</dd></div>
+            <div><dt class="text-xs text-nikkou-muted">Form gejala awal</dt><dd>{{ lead.symptom_form_filled ? `Sudah (${lead.symptom_form_code})` : 'Belum' }}</dd></div>
             <div><dt class="text-xs text-nikkou-muted">Follow-up</dt><dd>{{ lead.followup_count }} kali</dd></div>
             <div class="col-span-2"><dt class="text-xs text-nikkou-muted">Overall response (follow-up terakhir)</dt><dd><span v-if="lead.response" class="chip" :class="responseChip[lead.response]">{{ lead.response_label }}</span><template v-else>Belum ada follow-up</template></dd></div>
         </dl>
+        <ul v-if="lead.symptom_summary.length" class="card mt-3 p-4 text-sm">
+            <li class="mb-1 text-xs text-nikkou-muted">Kondisi kesehatan yang dicentang</li>
+            <li v-for="line in lead.symptom_summary" :key="line">{{ line }}</li>
+        </ul>
+        <Link :href="`/sales/leads/${lead.id}/symptom-form`" class="btn-primary mt-3 w-full text-center">{{ lead.symptom_form_filled ? 'Ubah form gejala awal' : 'Isi form gejala awal' }}</Link>
         <Link :href="`/sales/leads/${lead.id}/edit`" class="btn-outline mt-3 w-full text-center">Ubah data lead</Link>
 
         <h2 class="section-title mt-6">Follow-up ({{ lead.followup_count }} kali)</h2>

@@ -16,6 +16,7 @@ class ActivityLabels
         'unit.label_printed' => 'Label dicetak',
         'lead.created' => 'Lead ditambah',
         'lead.status_changed' => 'Status lead berubah',
+        'lead.symptom_form_saved' => 'Form gejala awal disimpan',
         'lead.followup_added' => 'Follow-up ditambah',
         'invoice.created' => 'Invoice dibuat',
         'invoice.status_changed' => 'Status invoice berubah',
