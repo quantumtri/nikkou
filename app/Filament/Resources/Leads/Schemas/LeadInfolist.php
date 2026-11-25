@@ -58,7 +58,7 @@ class LeadInfolist
             ]),
 
             Section::make('Status')->columns(3)->schema([
-                TextEntry::make('status')->label('Status lead')->badge()->formatStateUsing(fn ($state) => $state->label()),
+                TextEntry::make('status')->label('Status lead')->badge()->formatStateUsing(fn ($state) => $state->label())->color(fn ($state) => $state->color()),
                 TextEntry::make('cancel_reason')->label('Alasan batal')->formatStateUsing(fn ($state) => $state?->label())
                     ->visible(fn (Lead $r) => $r->cancel_reason !== null),
                 TextEntry::make('followup_count')->label('Follow-up')->suffix(' kali'),

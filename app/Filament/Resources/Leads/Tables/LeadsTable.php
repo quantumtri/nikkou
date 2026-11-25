@@ -38,12 +38,7 @@ class LeadsTable
                 IconColumn::make('symptom_form_filled')->label('Form gejala')->boolean()->alignCenter(),
                 TextColumn::make('status')->label('Status')->badge()
                     ->formatStateUsing(fn (LeadStatus $state) => $state->label())
-                    ->color(fn (LeadStatus $state) => match ($state) {
-                        LeadStatus::Purchased => 'success',
-                        LeadStatus::Cancelled => 'danger',
-                        LeadStatus::New => 'gray',
-                        default => 'info',
-                    }),
+                    ->color(fn (LeadStatus $state) => $state->color()),
                 TextColumn::make('followup_count')->label('Follow-up')->suffix(' kali')->alignCenter()->sortable(),
                 TextColumn::make('overall_response')->label('Response')->badge()
                     ->placeholder('-')

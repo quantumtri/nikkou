@@ -5,6 +5,7 @@ import SalesLayout from '@/Layouts/SalesLayout.vue';
 
 defineProps({ leads: Array });
 
+const statusChip = { purchased: 'chip-success', cancelled: 'chip-bad' };
 const responseChip = { positive: 'chip-neutral', neutral: 'chip-neutral', negative: 'chip-bad' };
 </script>
 
@@ -26,7 +27,7 @@ const responseChip = { positive: 'chip-neutral', neutral: 'chip-neutral', negati
                             <div class="font-medium">{{ lead.name }}</div>
                             <div class="text-xs text-nikkou-muted">{{ lead.location || '-' }}<template v-if="lead.gender"> | {{ lead.gender }}</template><template v-if="lead.age_range"> | {{ lead.age_range }} th</template></div>
                         </div>
-                        <span class="chip flex-none" :class="lead.status === 'cancelled' ? 'chip-bad' : 'chip-neutral'">{{ lead.status_label }}</span>
+                        <span class="chip flex-none" :class="statusChip[lead.status] ?? 'chip-neutral'">{{ lead.status_label }}</span>
                     </div>
                     <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
                         <div><dt class="text-nikkou-muted">{{ lead.path_label === 'Trial' ? 'Mencoba' : 'Membeli' }}</dt><dd>{{ lead.product || '-' }}</dd></div>

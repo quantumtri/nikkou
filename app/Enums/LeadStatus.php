@@ -21,6 +21,17 @@ enum LeadStatus: string
         };
     }
 
+    /** Badge color in the admin panel: Membeli is green. */
+    public function color(): string
+    {
+        return match ($this) {
+            self::Purchased => 'success',
+            self::Cancelled => 'danger',
+            self::New => 'gray',
+            default => 'info',
+        };
+    }
+
     /** @return array<string, string> */
     public static function options(): array
     {

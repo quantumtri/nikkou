@@ -14,7 +14,7 @@ const filters = [
 ];
 const filter = ref('');
 const shown = computed(() => props.invoices.filter((i) => !filter.value || i.status === filter.value));
-const chip = { unpaid: 'chip-neutral', paid: 'chip-neutral', cancelled: 'chip-bad' };
+const chip = { unpaid: 'chip-neutral', paid: 'chip-success', cancelled: 'chip-bad' };
 </script>
 
 <template>

@@ -12,6 +12,7 @@ const props = defineProps({
     today: String,
 });
 
+const statusChip = { purchased: 'chip-success', cancelled: 'chip-bad' };
 const responseChip = { positive: 'chip-neutral', neutral: 'chip-neutral', negative: 'chip-bad' };
 
 const form = useForm({ followed_up_on: props.today, channel: 'whatsapp', response: '', notes: '' });
@@ -33,7 +34,7 @@ const submit = () => form.post(`/sales/leads/${props.lead.id}/followups`, {
                 <h1 class="page-title">{{ lead.name }}</h1>
                 <div class="text-xs text-nikkou-muted">{{ lead.location || '-' }}<template v-if="lead.gender"> | {{ lead.gender }}</template><template v-if="lead.age_range"> | {{ lead.age_range }} th</template></div>
             </div>
-            <span class="chip flex-none" :class="lead.status === 'cancelled' ? 'chip-bad' : 'chip-neutral'">{{ lead.status_label }}</span>
+            <span class="chip flex-none" :class="statusChip[lead.status] ?? 'chip-neutral'">{{ lead.status_label }}</span>
         </div>
 
         <dl class="card mt-4 grid grid-cols-2 gap-x-4 gap-y-2 p-4 text-sm">
@@ -93,7 +94,7 @@ const submit = () => form.post(`/sales/leads/${props.lead.id}/followups`, {
         <ul class="flex flex-col gap-2 pb-6">
             <li v-for="i in invoices" :key="i.id" class="card flex items-center justify-between gap-3 p-3 text-sm">
                 <div><div class="font-medium">{{ i.code }}</div><div class="text-xs text-nikkou-muted">{{ i.issued_on }} | {{ i.total }}</div></div>
-                <span class="chip" :class="i.status === 'cancelled' ? 'chip-bad' : 'chip-neutral'">{{ i.status_label }}</span>
+                <span class="chip" :class="i.status === 'cancelled' ? 'chip-bad' : i.status === 'paid' ? 'chip-success' : 'chip-neutral'">{{ i.status_label }}</span>
             </li>
             <li v-if="!invoices.length" class="card p-4 text-center text-nikkou-muted">Belum ada invoice.</li>
         </ul>

@@ -156,6 +156,9 @@
     .chip-bad {
         @apply bg-nikkou-rose text-nikkou-red-ink;
     }
+    .chip-success {
+        @apply bg-green-100 text-green-800;
+    }
     .chip-neutral {
         @apply bg-nikkou-mist text-nikkou-muted;
     }
