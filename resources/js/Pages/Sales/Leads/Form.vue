@@ -10,9 +10,10 @@ const props = defineProps({
     ageRanges: Object,
     statuses: Object,
     cancelReasons: Object,
-    responses: Object,
+    paths: Object,
     provinces: Array,
     products: Array,
+    accessoryProducts: Array,
     today: String,
 });
 
@@ -25,21 +26,24 @@ const form = useForm({
     province: props.lead?.province ?? '',
     gender: props.lead?.gender ?? '',
     age_range: props.lead?.age_range ?? '',
+    path: props.lead?.path ?? 'trial',
     product_id: props.lead?.product_id ?? '',
+    accessories: (props.lead?.accessories ?? []).map((a) => ({ ...a })),
     trial_started_on: props.lead?.trial_started_on ?? props.today,
     symptom_form_filled: props.lead?.symptom_form_filled ?? false,
     status: props.lead?.status ?? 'new',
     cancel_reason: props.lead?.cancel_reason ?? '',
-    followup_count: props.lead?.followup_count ?? 0,
-    overall_response: props.lead?.overall_response ?? '',
     notes: props.lead?.notes ?? '',
 });
 
-const groups = computed(() => {
-    const out = {};
-    for (const p of props.products) (out[p.category] ??= []).push(p);
-    return out;
-});
+const direct = computed(() => form.path === 'direct');
+
+const accessoryQty = (id) => form.accessories.find((a) => a.product_id === id)?.quantity ?? 0;
+const setAccessory = (id, qty) => {
+    const q = Math.max(0, Math.min(99, Number(qty) || 0));
+    const rest = form.accessories.filter((a) => a.product_id !== id);
+    form.accessories = q > 0 ? [...rest, { product_id: id, quantity: q }] : rest;
+};
 
 const submit = () => (editing.value ? form.put(`/sales/leads/${props.lead.id}`) : form.post('/sales/leads'));
 </script>
@@ -89,19 +93,39 @@ const submit = () => (editing.value ? form.put(`/sales/leads/${props.lead.id}`) 
             </select>
             <p v-if="form.errors.age_range" class="field-error" role="alert">{{ form.errors.age_range }}</p>
 
-            <h2 class="section-title"><span class="step">2</span>Trial</h2>
-            <label for="product_id" class="field-label">Mencoba produk apa</label>
+            <h2 class="section-title"><span class="step">2</span>Produk</h2>
+            <label class="field-label">Jalur</label>
+            <div class="segmented" role="radiogroup" aria-label="Jalur">
+                <button v-for="(label, value) in paths" :key="value" type="button" role="radio" :aria-checked="form.path === value" :disabled="editing" @click="form.path = value">{{ label }}</button>
+            </div>
+            <p class="mt-1 text-xs text-nikkou-muted">{{ direct ? 'Beli langsung: invoice dibuat otomatis.' : 'Trial: dicoba dulu sebelum membeli.' }}</p>
+            <p v-if="form.errors.path" class="field-error" role="alert">{{ form.errors.path }}</p>
+
+            <label for="product_id" class="field-label">{{ direct ? 'Produk yang dibeli' : 'Mencoba produk apa' }}</label>
             <select id="product_id" v-model="form.product_id" class="field-input">
-                <option value="">Pilih produk</option>
-                <optgroup v-for="(items, category) in groups" :key="category" :label="category">
-                    <option v-for="p in items" :key="p.id" :value="p.id">{{ p.name }}</option>
-                </optgroup>
+                <option value="">Pilih produk utama</option>
+                <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
             <p v-if="form.errors.product_id" class="field-error" role="alert">{{ form.errors.product_id }}</p>
 
-            <label for="trial_started_on" class="field-label">Mulai coba tanggal</label>
-            <input id="trial_started_on" v-model="form.trial_started_on" type="date" class="field-input" />
-            <p v-if="form.errors.trial_started_on" class="field-error" role="alert">{{ form.errors.trial_started_on }}</p>
+            <template v-if="!direct">
+                <label for="trial_started_on" class="field-label">Mulai coba tanggal</label>
+                <input id="trial_started_on" v-model="form.trial_started_on" type="date" class="field-input" />
+                <p v-if="form.errors.trial_started_on" class="field-error" role="alert">{{ form.errors.trial_started_on }}</p>
+            </template>
+
+            <label class="field-label">{{ direct ? 'Aksesoris (masuk invoice)' : 'Aksesoris dibawa saat trial' }}</label>
+            <ul class="flex flex-col gap-2">
+                <li v-for="a in accessoryProducts" :key="a.id" class="flex min-h-[44px] items-center justify-between gap-3">
+                    <span>{{ a.name }} <span class="text-xs text-nikkou-muted">{{ a.price }}</span></span>
+                    <span class="flex items-center gap-2">
+                        <button type="button" class="chip chip-neutral" :aria-label="`Kurangi ${a.name}`" @click="setAccessory(a.id, accessoryQty(a.id) - 1)">-</button>
+                        <span class="w-6 text-center" aria-live="polite">{{ accessoryQty(a.id) }}</span>
+                        <button type="button" class="chip chip-neutral" :aria-label="`Tambah ${a.name}`" @click="setAccessory(a.id, accessoryQty(a.id) + 1)">+</button>
+                    </span>
+                </li>
+            </ul>
+            <p v-if="form.errors.accessories" class="field-error" role="alert">{{ form.errors.accessories }}</p>
 
             <label class="mt-4 flex min-h-[44px] items-center gap-3">
                 <input v-model="form.symptom_form_filled" type="checkbox" class="h-5 w-5" />
@@ -123,16 +147,6 @@ const submit = () => (editing.value ? form.put(`/sales/leads/${props.lead.id}`) 
                 </select>
                 <p v-if="form.errors.cancel_reason" class="field-error" role="alert">{{ form.errors.cancel_reason }}</p>
             </template>
-
-            <label for="followup_count" class="field-label">Follow-up pemakaian (berapa kali)</label>
-            <input id="followup_count" v-model="form.followup_count" type="number" min="0" inputmode="numeric" class="field-input" />
-            <p v-if="form.errors.followup_count" class="field-error" role="alert">{{ form.errors.followup_count }}</p>
-
-            <label for="overall_response" class="field-label">Overall response</label>
-            <select id="overall_response" v-model="form.overall_response" class="field-input">
-                <option value="">Belum ada</option>
-                <option v-for="(label, value) in responses" :key="value" :value="value">{{ label }}</option>
-            </select>
 
             <label for="notes" class="field-label">Catatan</label>
             <textarea id="notes" v-model="form.notes" rows="2" class="field-input"></textarea>

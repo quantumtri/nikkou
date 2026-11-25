@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\Lead;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\FollowUpService;
 use App\Services\LeadService;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
@@ -21,8 +22,9 @@ beforeEach(function () {
 
     $this->payload = fn (array $o = []) => [
         'name' => 'Siti Rahmawati', 'whatsapp_number' => '0812 3000 0201', 'city' => 'Surabaya', 'province' => 'Jawa Timur',
-        'gender' => 'female', 'age_range' => '40-49', 'product_id' => $this->home->id, 'trial_started_on' => '2026-11-10',
-        'symptom_form_filled' => true, 'status' => 'trial_active', 'followup_count' => 2, 'overall_response' => 'positive',
+        'gender' => 'female', 'age_range' => '40-49', 'path' => 'trial', 'product_id' => $this->home->id, 'trial_started_on' => '2026-11-10',
+        'accessories' => [['product_id' => $this->kanula->id, 'quantity' => 2]],
+        'symptom_form_filled' => true, 'status' => 'trial_active',
         ...$o,
     ];
 });
@@ -42,24 +44,28 @@ it('creates a lead with all ten profile fields and logs it', function () {
         ->and($lead->trial_started_on->toDateString())->toBe('2026-11-10')
         ->and($lead->symptom_form_filled)->toBeTrue()
         ->and($lead->status->value)->toBe('trial_active')
-        ->and($lead->followup_count)->toBe(2)
-        ->and($lead->overall_response->value)->toBe('positive')
+        ->and($lead->code)->toMatch('/^LD-\d{4}-\d{4}$/')
+        ->and($lead->path->value)->toBe('trial')
+        ->and($lead->accessories->first()->pivot->quantity)->toBe(2)
+        ->and($lead->followup_count)->toBe(0)
         ->and(ActivityLog::where('subject_type', 'lead')->where('action', 'lead.created')->count())->toBe(1);
 });
 
-it('accepts an accessory as the product tried and no WhatsApp number', function () {
+it('accepts a lead without a WhatsApp number', function () {
     $service = app(LeadService::class);
-    $lead = $service->create($service->validate(($this->payload)(['product_id' => $this->kanula->id, 'whatsapp_number' => null])), $this->dewi);
+    $lead = $service->create($service->validate(($this->payload)(['whatsapp_number' => null])), $this->dewi);
 
-    expect($lead->product->category->value)->toBe('accessory')->and($lead->customer->whatsapp_number)->toBeNull();
+    expect($lead->customer->whatsapp_number)->toBeNull();
 });
 
 it('validates required fields, enums and inactive products', function (array $override, string $field) {
     expect(fn () => app(LeadService::class)->validate(($this->payload)($override)))
         ->toThrow(ValidationException::class);
 
+    // Product ids 1 (main) and 2 (accessory) come from beforeEach.
     try {
         app(LeadService::class)->validate(($this->payload)($override));
+        $this->fail('Expected a validation error.');
     } catch (ValidationException $e) {
         expect($e->errors())->toHaveKey($field);
     }
@@ -68,8 +74,10 @@ it('validates required fields, enums and inactive products', function (array $ov
     'no province' => [['province' => ''], 'province'],
     'bad gender' => [['gender' => 'x'], 'gender'],
     'bad age' => [['age_range' => '99'], 'age_range'],
-    'bad response' => [['overall_response' => 'great'], 'overall_response'],
-    'negative followups' => [['followup_count' => -1], 'followup_count'],
+    'bad path' => [['path' => 'maybe'], 'path'],
+    'accessory as product' => [['product_id' => 2], 'product_id'],
+    'main product as accessory' => [['accessories' => [['product_id' => 1, 'quantity' => 1]]], 'accessories.0.product_id'],
+    'zero quantity' => [['accessories' => [['product_id' => 2, 'quantity' => 0]]], 'accessories.0.quantity'],
     'cancelled needs reason' => [['status' => 'cancelled', 'cancel_reason' => null], 'cancel_reason'],
     'unknown product' => [['product_id' => 9999], 'product_id'],
 ]);
@@ -95,9 +103,9 @@ it('logs status changes and clears the cancel reason when reopened', function ()
 it('does not log a status change when only other fields change', function () {
     $service = app(LeadService::class);
     $lead = $service->create($service->validate(($this->payload)()), $this->dewi);
-    $service->update($lead, $service->validate(($this->payload)(['followup_count' => 5])), $this->dewi);
+    $service->update($lead, $service->validate(($this->payload)(['notes' => 'Minta dihubungi sore'])), $this->dewi);
 
-    expect($lead->refresh()->followup_count)->toBe(5)->and(ActivityLog::where('action', 'lead.status_changed')->count())->toBe(0);
+    expect($lead->refresh()->notes)->toBe('Minta dihubungi sore')->and(ActivityLog::where('action', 'lead.status_changed')->count())->toBe(0);
 });
 
 it('falls back to loan data for product and trial start', function () {
@@ -120,7 +128,7 @@ describe('sales app', function () {
         $this->actingAs($this->dewi)->get('/sales/leads')->assertInertia(fn (AssertableInertia $p) => $p
             ->component('Sales/Leads/Index')->has('leads', 1)
             ->where('leads.0.name', 'Siti Rahmawati')->where('leads.0.product', 'H2 Home')
-            ->where('leads.0.followup_count', 2)->where('leads.0.response', 'positive')
+            ->where('leads.0.followup_count', 0)->where('leads.0.code', fn ($c) => str_starts_with($c, 'LD-'))
             ->where('leads.0.symptom_form_filled', true));
     });
 
@@ -129,8 +137,8 @@ describe('sales app', function () {
         $mine = $service->create($service->validate(($this->payload)()), $this->dewi);
         $theirs = $service->create($service->validate(($this->payload)()), $this->rizky);
 
-        $this->actingAs($this->dewi)->put("/sales/leads/{$mine->id}", ($this->payload)(['followup_count' => 7]))->assertRedirect();
-        expect($mine->refresh()->followup_count)->toBe(7);
+        $this->actingAs($this->dewi)->put("/sales/leads/{$mine->id}", ($this->payload)(['notes' => 'Catatan baru']))->assertRedirect();
+        expect($mine->refresh()->notes)->toBe('Catatan baru');
 
         $this->actingAs($this->dewi)->get("/sales/leads/{$theirs->id}/edit")->assertForbidden();
         $this->actingAs($this->dewi)->put("/sales/leads/{$theirs->id}", ($this->payload)())->assertForbidden();
@@ -145,7 +153,11 @@ describe('admin', function () {
     it('lists all leads with the ten columns, and filters', function () {
         $service = app(LeadService::class);
         $a = $service->create($service->validate(($this->payload)()), $this->dewi);
-        $b = $service->create($service->validate(($this->payload)(['name' => 'Budi Neg', 'overall_response' => 'negative'])), $this->rizky);
+        $b = $service->create($service->validate(($this->payload)(['name' => 'Budi Neg'])), $this->rizky);
+        foreach ([['2026-11-12', 'neutral'], ['2026-11-14', 'positive']] as [$day, $response]) {
+            app(FollowUpService::class)->add($a, ['followed_up_on' => $day, 'channel' => 'whatsapp', 'response' => $response], $this->dewi);
+        }
+        app(FollowUpService::class)->add($b, ['followed_up_on' => '2026-11-14', 'channel' => 'call', 'response' => 'negative'], $this->rizky);
 
         $this->actingAs($this->admin);
         Livewire::test(ListLeads::class)

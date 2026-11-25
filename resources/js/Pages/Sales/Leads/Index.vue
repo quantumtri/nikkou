@@ -19,16 +19,17 @@ const responseChip = { positive: 'chip-neutral', neutral: 'chip-neutral', negati
 
         <ul class="mt-5 flex flex-col gap-3">
             <li v-for="lead in leads" :key="lead.id">
-                <Link :href="`/sales/leads/${lead.id}/edit`" class="card block p-4">
+                <Link :href="`/sales/leads/${lead.id}`" class="card block p-4">
                     <div class="flex items-start justify-between gap-3">
                         <div class="min-w-0">
+                            <div class="text-xs text-nikkou-muted">{{ lead.code }} | {{ lead.path_label }}</div>
                             <div class="font-medium">{{ lead.name }}</div>
                             <div class="text-xs text-nikkou-muted">{{ lead.location || '-' }}<template v-if="lead.gender"> | {{ lead.gender }}</template><template v-if="lead.age_range"> | {{ lead.age_range }} th</template></div>
                         </div>
                         <span class="chip flex-none" :class="lead.status === 'cancelled' ? 'chip-bad' : 'chip-neutral'">{{ lead.status_label }}</span>
                     </div>
                     <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                        <div><dt class="text-nikkou-muted">Mencoba</dt><dd>{{ lead.product || '-' }}</dd></div>
+                        <div><dt class="text-nikkou-muted">{{ lead.path_label === 'Trial' ? 'Mencoba' : 'Membeli' }}</dt><dd>{{ lead.product || '-' }}</dd></div>
                         <div><dt class="text-nikkou-muted">Mulai coba</dt><dd>{{ lead.trial_start || '-' }}</dd></div>
                         <div><dt class="text-nikkou-muted">Form gejala awal</dt><dd>{{ lead.symptom_form_filled ? 'Sudah' : 'Belum' }}</dd></div>
                         <div><dt class="text-nikkou-muted">Follow-up</dt><dd>{{ lead.followup_count }} kali</dd></div>
