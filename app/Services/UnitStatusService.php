@@ -31,10 +31,10 @@ class UnitStatusService
         return in_array($to, self::TRANSITIONS[$from->value], true);
     }
 
-    /** Only an available unit can be picked for a new loan without an admin override. */
+    /** Only an available unit not held by an unpaid invoice can be picked for a new loan without an admin override. */
     public function isLoanable(Unit $unit): bool
     {
-        return $unit->status === UnitStatus::Available;
+        return $unit->status === UnitStatus::Available && $unit->reservingInvoice() === null;
     }
 
     public function transition(Unit $unit, UnitStatus $to, ?User $actor = null, ?string $notes = null, string $action = 'unit.status_changed'): Unit

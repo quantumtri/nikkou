@@ -34,6 +34,7 @@ defineProps({
             <Link href="/sales/loans/create" class="btn-primary">Pinjamkan unit</Link>
             <Link href="/sales/returns/create" class="btn-outline">Terima pengembalian</Link>
             <Link href="/sales/leads" class="btn-outline">Lead saya</Link>
+            <Link href="/sales/invoices" class="btn-outline">Invoice saya</Link>
             <Link href="/sales/sops" class="btn-outline">
                 SOP<span v-if="unreadSops" class="ml-2 rounded-full bg-nikkou-red-deep px-2 py-0.5 text-xs text-white">{{ unreadSops }} belum dibaca</span>
             </Link>

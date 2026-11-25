@@ -6,6 +6,7 @@ use App\Http\Controllers\LabelController;
 use App\Http\Controllers\ReceiptFileController;
 use App\Http\Controllers\ReceiptPrintController;
 use App\Http\Controllers\Sales\HomeController;
+use App\Http\Controllers\Sales\InvoiceController;
 use App\Http\Controllers\Sales\LeadController;
 use App\Http\Controllers\Sales\LoanController;
 use App\Http\Controllers\Sales\ReturnController;
@@ -59,6 +60,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/loans/create', [LoanController::class, 'create'])->name('loans.create');
         Route::post('/loans', [LoanController::class, 'store'])->name('loans.store');
         Route::get('/loans/{loan}', [LoanController::class, 'show'])->name('loans.show');
+        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/leads', [LeadController::class, 'index'])->name('leads.index');
         Route::get('/leads/create', [LeadController::class, 'create'])->name('leads.create');
         Route::post('/leads', [LeadController::class, 'store'])->name('leads.store');

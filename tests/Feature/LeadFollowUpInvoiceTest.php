@@ -2,6 +2,7 @@
 
 use App\Enums\InvoiceStatus;
 use App\Enums\UnitStatus;
+use App\Exceptions\UnitNotLoanable;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\Leads\Pages\CreateLead;
@@ -218,6 +219,35 @@ describe('inventory ID on purchases', function () {
         $ok = app(InvoiceService::class)->validate(['items' => [$line(['unit_id' => $this->units[0]->id]), ['product_id' => $this->kanula->id, 'quantity' => 2, 'unit_price' => 150000]]]);
         $invoice = app(InvoiceService::class)->createForLead($lead, $ok['items'], $this->admin);
         expect($invoice->items->pluck('unit_id')->all())->toBe([$this->units[0]->id, null]);
+    });
+});
+
+describe('reserved units and the sales invoice list', function () {
+    it('keeps a unit held by an unpaid invoice out of new loans', function () {
+        $lead = ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[0]->id]);
+        $status = app(UnitStatusService::class);
+
+        expect($status->isLoanable($this->units[0]->refresh()))->toBeFalse()
+            ->and($status->isLoanable($this->units[1]))->toBeTrue()
+            ->and(UnitNotLoanable::describe($this->units[0], null))->toContain($lead->invoices()->sole()->code)->toContain('Siti Rahmawati');
+
+        // Cancelling the invoice frees the unit for loans again.
+        app(InvoiceService::class)->changeStatus($lead->invoices()->sole(), InvoiceStatus::Cancelled, $this->admin);
+        expect($status->isLoanable($this->units[0]->refresh()))->toBeTrue();
+    });
+
+    it('shows sales only the invoices on their own leads', function () {
+        ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[0]->id]);
+        ($this->makeLead)(['path' => 'direct', 'name' => 'Punya Rizky', 'unit_id' => $this->units[1]->id], $this->rizky);
+
+        $this->actingAs($this->dewi)->get('/sales/invoices')->assertInertia(fn (AssertableInertia $p) => $p
+            ->component('Sales/Invoices/Index')->has('invoices', 1)
+            ->where('invoices.0.customer', 'Siti Rahmawati')->where('invoices.0.status', 'unpaid')
+            ->where('invoices.0.items.0.unit_code', $this->units[0]->code));
+    });
+
+    it('keeps warehouse staff out of the sales invoice list', function () {
+        $this->actingAs(User::factory()->warehouse()->create())->get('/sales/invoices')->assertForbidden();
     });
 });
 

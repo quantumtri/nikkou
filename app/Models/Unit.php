@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\InvoiceStatus;
 use App\Enums\LoanStatus;
 use App\Enums\UnitStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -67,6 +68,13 @@ class Unit extends Model
     public function activityLogs(): MorphMany
     {
         return $this->morphMany(ActivityLog::class, 'subject');
+    }
+
+    /** The unpaid invoice that holds this unit for a buyer, if any. */
+    public function reservingInvoice(): ?Invoice
+    {
+        return Invoice::query()->where('status', InvoiceStatus::Unpaid->value)
+            ->whereHas('items', fn ($q) => $q->where('unit_id', $this->id))->with('lead.customer')->first();
     }
 
     /** Where the unit is now: the borrower (with the sales name) or its storage location. */
