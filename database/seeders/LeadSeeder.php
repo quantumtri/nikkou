@@ -6,6 +6,8 @@ use App\Enums\InvoiceStatus;
 use App\Enums\ProductCategory;
 use App\Models\Lead;
 use App\Models\Product;
+use App\Models\Unit;
+use App\Models\UnitType;
 use App\Models\User;
 use App\Services\FollowUpService;
 use App\Services\InvoiceService;
@@ -24,7 +26,11 @@ class LeadSeeder extends Seeder
             ['Adaptor daya', ProductCategory::Accessory, 350000], ['Tas pembawa', ProductCategory::Accessory, 450000],
         ];
         foreach ($products as [$name, $category, $price]) {
-            Product::updateOrCreate(['name' => $name], ['category' => $category, 'price' => $price, 'is_active' => true]);
+            Product::updateOrCreate(['name' => $name], [
+                'category' => $category, 'price' => $price, 'is_active' => true,
+                // Main products are sold from the unit type of the same name.
+                'unit_type_id' => $category === ProductCategory::Main ? UnitType::where('name', $name)->value('id') : null,
+            ]);
         }
 
         if (Lead::where('source', 'manual')->exists()) {
@@ -74,6 +80,8 @@ class LeadSeeder extends Seeder
         }
 
         // Direct purchases: no trial, the invoice is issued right away.
+        $unitFor = fn (string $product) => Unit::where('unit_type_id', Product::where('name', $product)->value('unit_type_id'))
+            ->where('status', 'available')->orderBy('code')->value('id');
         $direct = [
             [$dewi, 'Lestari Wulandari', 'Yogyakarta', 'DI Yogyakarta', 'female', '50-59', 'H2 Pro', ['Kanula hidung', 'Tas pembawa'], false],
             [$rizky, 'Budi Hartanto', 'Surabaya', 'Jawa Timur', 'male', '40-49', 'H2 Home', ['Selang cadangan'], true],
@@ -81,7 +89,7 @@ class LeadSeeder extends Seeder
         foreach ($direct as [$sales, $name, $city, $province, $gender, $age, $product, $accessories, $paid]) {
             $lead = $service->create($service->validate([
                 'name' => $name, 'city' => $city, 'province' => $province, 'gender' => $gender, 'age_range' => $age,
-                'path' => 'direct', 'product_id' => $id($product),
+                'path' => 'direct', 'product_id' => $id($product), 'unit_id' => $unitFor($product),
                 'accessories' => array_map(fn ($a) => ['product_id' => $id($a), 'quantity' => 1], $accessories),
                 'symptom_form_filled' => false, 'status' => 'offer_sent',
             ]), $sales);

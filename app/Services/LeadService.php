@@ -34,6 +34,7 @@ class LeadService
             'path' => ['required', Rule::enum(LeadPath::class)],
             // The product tried or bought is always a main product; accessories are listed separately.
             'product_id' => ['required', Rule::exists('products', 'id')->where('is_active', true)->where('category', ProductCategory::Main->value)],
+            'unit_id' => ['nullable', Rule::exists('units', 'id')],
             'accessories' => ['nullable', 'array', 'max:20'],
             'accessories.*.product_id' => ['required', 'distinct', Rule::exists('products', 'id')->where('is_active', true)->where('category', ProductCategory::Accessory->value)],
             'accessories.*.quantity' => ['required', 'integer', 'min:1', 'max:99'],
@@ -48,12 +49,21 @@ class LeadService
 
     /** @param  array<string, mixed>  $input
      * @return array<string, mixed> */
-    public function validate(array $input, bool $withSales = false): array
+    public function validate(array $input, bool $withSales = false, bool $creating = true): array
     {
         return Validator::make($input, self::rules($withSales), [
             'cancel_reason.required_if' => 'Alasan batal wajib diisi bila status Batal.',
             'product_id.exists' => 'Pilih produk utama. Aksesoris diisi di bagian Aksesoris.',
-        ])->validate();
+        ])->after(function ($validator) use ($input, $creating) {
+            // A purchase must name the inventory unit (ID) being sold.
+            if (! $creating || ($input['path'] ?? null) !== LeadPath::Direct->value || ! $validator->errors()->isEmpty()) {
+                return;
+            }
+            $problems = InvoiceService::itemProblems([['product_id' => $input['product_id'], 'unit_id' => $input['unit_id'] ?? null, 'quantity' => 1]]);
+            foreach ($problems as $message) {
+                $validator->errors()->add('unit_id', $message);
+            }
+        })->validate();
     }
 
     /** @param  array<string, mixed>  $data  Validated by validate(). */
@@ -78,7 +88,7 @@ class LeadService
 
             // A direct purchase skips the trial: the invoice is issued right away.
             if ($lead->path === LeadPath::Direct) {
-                app(InvoiceService::class)->createForLead($lead, $this->invoiceLines($lead), $by);
+                app(InvoiceService::class)->createForLead($lead, $this->invoiceLines($lead, $data['unit_id']), $by);
             }
 
             return $lead->refresh();
@@ -144,11 +154,11 @@ class LeadService
     }
 
     /** Main product plus accessories, priced from the catalog (the invoice keeps its own copy). @return array<int, array<string, int>> */
-    private function invoiceLines(Lead $lead): array
+    private function invoiceLines(Lead $lead, int|string $unitId): array
     {
         $lead->load('accessories');
 
-        return collect([['product_id' => $lead->product_id, 'quantity' => 1]])
+        return collect([['product_id' => $lead->product_id, 'quantity' => 1, 'unit_id' => (int) $unitId]])
             ->merge($lead->accessories->map(fn (Product $p) => ['product_id' => $p->id, 'quantity' => $p->pivot->quantity]))
             ->map(fn ($l) => $l + ['unit_price' => Product::findOrFail($l['product_id'])->price])
             ->all();

@@ -14,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Lead;
 use App\Models\Product;
 use App\Services\FollowUpService;
+use App\Services\InvoiceService;
 use App\Services\LeadService;
 use App\Support\Provinces;
 use App\Support\Rupiah;
@@ -148,7 +149,7 @@ class LeadController extends Controller
     {
         Gate::authorize('update', $lead);
 
-        $this->leads->update($lead, $this->leads->validate($request->all() + ['path' => $lead->path->value]), $request->user());
+        $this->leads->update($lead, $this->leads->validate($request->all() + ['path' => $lead->path->value], creating: false), $request->user());
 
         return redirect()->route('sales.leads.show', $lead)->with('success', 'Lead diperbarui.');
     }
@@ -165,6 +166,8 @@ class LeadController extends Controller
             'provinces' => array_values(Provinces::ALL),
             'products' => Product::active()->ofCategory(ProductCategory::Main)->orderBy('name')->get()
                 ->map(fn (Product $p) => ['id' => $p->id, 'name' => $p->name, 'price' => Rupiah::format($p->price)])->values(),
+            'unitsByProduct' => Product::active()->ofCategory(ProductCategory::Main)->get()
+                ->mapWithKeys(fn (Product $p) => [$p->id => collect(InvoiceService::availableUnits($p))->map(fn ($label, $id) => ['id' => $id, 'label' => $label])->values()]),
             'accessoryProducts' => Product::active()->ofCategory(ProductCategory::Accessory)->orderBy('name')->get()
                 ->map(fn (Product $p) => ['id' => $p->id, 'name' => $p->name, 'price' => Rupiah::format($p->price)])->values(),
             'today' => today()->toDateString(),

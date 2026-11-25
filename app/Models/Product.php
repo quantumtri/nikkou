@@ -6,14 +6,20 @@ use App\Enums\ProductCategory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /** Sellable catalog (main products and accessories). Separate from physical inventory units. */
-#[Fillable(['name', 'category', 'price', 'is_active'])]
+#[Fillable(['name', 'category', 'unit_type_id', 'price', 'is_active'])]
 class Product extends Model
 {
     protected function casts(): array
     {
         return ['category' => ProductCategory::class, 'is_active' => 'boolean', 'price' => 'integer'];
+    }
+
+    public function unitType(): BelongsTo
+    {
+        return $this->belongsTo(UnitType::class);
     }
 
     public function scopeActive(Builder $query): Builder

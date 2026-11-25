@@ -10,6 +10,7 @@ use App\Enums\LeadStatus;
 use App\Enums\ProductCategory;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\InvoiceService;
 use App\Support\Provinces;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Radio;
@@ -41,7 +42,14 @@ class LeadForm
                     ->helperText('Trial: dicoba dulu. Beli langsung: invoice dibuat otomatis.')->columnSpanFull(),
                 Select::make('product_id')->label(fn ($get) => $get('path') === LeadPath::Direct->value ? 'Produk yang dibeli' : 'Mencoba produk apa')
                     ->options(fn () => Product::active()->ofCategory(ProductCategory::Main)->orderBy('name')->pluck('name', 'id'))->searchable()->required()
+                    ->live()->afterStateUpdated(fn ($set) => $set('unit_id', null))
                     ->helperText('Hanya produk utama. Aksesoris dipilih di bawah.'),
+                Select::make('unit_id')->label('ID inventori yang dijual')->searchable()
+                    ->options(fn ($get) => InvoiceService::availableUnits(Product::find($get('product_id'))))
+                    ->visible(fn ($get, string $operation) => $operation === 'create' && $get('path') === LeadPath::Direct->value)
+                    ->required()
+                    ->helperText('Unit fisik dari gudang yang Tersedia. Menjadi Terjual saat invoice lunas.')
+                    ->noSearchResultsMessage('Tidak ada unit Tersedia untuk produk ini.'),
                 DatePicker::make('trial_started_on')->label('Mulai coba tanggal')->visible(fn ($get) => $get('path') !== LeadPath::Direct->value),
                 Repeater::make('accessories')->label(fn ($get) => $get('path') === LeadPath::Direct->value ? 'Aksesoris (masuk invoice)' : 'Aksesoris (dibawa saat trial)')
                     ->columnSpanFull()->addActionLabel('Tambah aksesoris')->defaultItems(0)->columns(3)

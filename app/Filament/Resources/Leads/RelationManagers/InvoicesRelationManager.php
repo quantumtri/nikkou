@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Leads\RelationManagers;
 
+use App\Enums\ProductCategory;
 use App\Filament\Resources\Invoices\InvoiceResource;
 use App\Models\Lead;
 use App\Models\Product;
@@ -32,11 +33,18 @@ class InvoicesRelationManager extends RelationManager
     public function form(Schema $schema): Schema
     {
         return $schema->components([
-            Repeater::make('items')->label('Item')->addActionLabel('Tambah item')->minItems(1)->columns(4)->columnSpanFull()
+            Repeater::make('items')->label('Item')->addActionLabel('Tambah item')->minItems(1)->columns(6)->columnSpanFull()
                 ->schema([
                     Select::make('product_id')->label('Produk / aksesoris')->required()->searchable()->live()->columnSpan(2)
                         ->options(fn () => Product::groupedOptions())
-                        ->afterStateUpdated(fn ($state, $set) => $set('unit_price', Product::find($state)?->price ?? 0)),
+                        ->afterStateUpdated(function ($state, $set) {
+                            $set('unit_price', Product::find($state)?->price ?? 0);
+                            $set('unit_id', null);
+                        }),
+                    Select::make('unit_id')->label('ID inventori')->searchable()->columnSpan(2)
+                        ->visible(fn ($get) => Product::find($get('product_id'))?->category === ProductCategory::Main)
+                        ->required(fn ($get) => Product::find($get('product_id'))?->category === ProductCategory::Main)
+                        ->options(fn ($get) => InvoiceService::availableUnits(Product::find($get('product_id')))),
                     TextInput::make('quantity')->label('Jumlah')->numeric()->minValue(1)->maxValue(99)->default(1)->required(),
                     TextInput::make('unit_price')->label('Harga satuan')->numeric()->minValue(0)->prefix('Rp')->required(),
                 ]),
@@ -75,7 +83,7 @@ class InvoicesRelationManager extends RelationManager
     /** Pre-fill with the lead's main product and accessories at today's catalog price. @return array<int, array<string, mixed>> */
     private function defaultItems(Lead $lead): array
     {
-        $main = $lead->product ? [['product_id' => $lead->product_id, 'quantity' => 1, 'unit_price' => $lead->product->price]] : [];
+        $main = $lead->product ? [['product_id' => $lead->product_id, 'quantity' => 1, 'unit_id' => null, 'unit_price' => $lead->product->price]] : [];
 
         return array_merge($main, $lead->accessories->map(fn (Product $p) => [
             'product_id' => $p->id, 'quantity' => $p->pivot->quantity, 'unit_price' => $p->price,

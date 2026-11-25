@@ -38,7 +38,7 @@ class EditLead extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $service = app(LeadService::class);
-        $data = $service->validate($data + ['path' => $record->path->value], withSales: true);
+        $data = $service->validate($data + ['path' => $record->path->value], withSales: true, creating: false);
 
         if ((int) $data['sales_id'] !== $record->sales_id) {
             $record->forceFill(['sales_id' => $data['sales_id']])->save();

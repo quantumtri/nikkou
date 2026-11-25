@@ -1,6 +1,6 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 import NavIcon from '@/Components/NavIcon.vue';
 import SalesLayout from '@/Layouts/SalesLayout.vue';
 
@@ -14,6 +14,7 @@ const props = defineProps({
     provinces: Array,
     products: Array,
     accessoryProducts: Array,
+    unitsByProduct: Object,
     today: String,
 });
 
@@ -28,6 +29,7 @@ const form = useForm({
     age_range: props.lead?.age_range ?? '',
     path: props.lead?.path ?? 'trial',
     product_id: props.lead?.product_id ?? '',
+    unit_id: '',
     accessories: (props.lead?.accessories ?? []).map((a) => ({ ...a })),
     trial_started_on: props.lead?.trial_started_on ?? props.today,
     symptom_form_filled: props.lead?.symptom_form_filled ?? false,
@@ -37,6 +39,8 @@ const form = useForm({
 });
 
 const direct = computed(() => form.path === 'direct');
+const units = computed(() => props.unitsByProduct?.[form.product_id] ?? []);
+watch(() => form.product_id, () => { form.unit_id = ''; });
 
 const accessoryQty = (id) => form.accessories.find((a) => a.product_id === id)?.quantity ?? 0;
 const setAccessory = (id, qty) => {
@@ -107,6 +111,16 @@ const submit = () => (editing.value ? form.put(`/sales/leads/${props.lead.id}`) 
                 <option v-for="p in products" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
             <p v-if="form.errors.product_id" class="field-error" role="alert">{{ form.errors.product_id }}</p>
+
+            <template v-if="direct && !editing">
+                <label for="unit_id" class="field-label">ID inventori yang dijual</label>
+                <select id="unit_id" v-model="form.unit_id" class="field-input" :disabled="!form.product_id">
+                    <option value="">{{ form.product_id ? (units.length ? 'Pilih ID inventori' : 'Tidak ada unit Tersedia') : 'Pilih produk dulu' }}</option>
+                    <option v-for="u in units" :key="u.id" :value="u.id">{{ u.label }}</option>
+                </select>
+                <p class="mt-1 text-xs text-nikkou-muted">Unit fisik dari gudang. Menjadi Terjual saat invoice lunas.</p>
+                <p v-if="form.errors.unit_id" class="field-error" role="alert">{{ form.errors.unit_id }}</p>
+            </template>
 
             <template v-if="!direct">
                 <label for="trial_started_on" class="field-label">Mulai coba tanggal</label>

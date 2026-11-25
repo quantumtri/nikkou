@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\InvoiceStatus;
+use App\Enums\UnitStatus;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\Leads\Pages\CreateLead;
@@ -12,10 +13,13 @@ use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Lead;
 use App\Models\Product;
+use App\Models\Unit;
+use App\Models\UnitType;
 use App\Models\User;
 use App\Services\FollowUpService;
 use App\Services\InvoiceService;
 use App\Services\LeadService;
+use App\Services\UnitStatusService;
 use Filament\Actions\Testing\TestAction;
 use Illuminate\Validation\ValidationException;
 use Inertia\Testing\AssertableInertia;
@@ -25,7 +29,9 @@ beforeEach(function () {
     $this->admin = User::factory()->admin()->create();
     $this->dewi = User::factory()->sales()->create(['name' => 'Dewi']);
     $this->rizky = User::factory()->sales()->create(['name' => 'Rizky']);
-    $this->home = Product::create(['name' => 'H2 Home', 'category' => 'main', 'price' => 8900000]);
+    $this->homeType = UnitType::factory()->create(['name' => 'H2 Home']);
+    $this->units = Unit::factory()->count(3)->create(['unit_type_id' => $this->homeType->id]);
+    $this->home = Product::create(['name' => 'H2 Home', 'category' => 'main', 'price' => 8900000, 'unit_type_id' => $this->homeType->id]);
     $this->kanula = Product::create(['name' => 'Kanula hidung', 'category' => 'accessory', 'price' => 150000]);
     $this->tas = Product::create(['name' => 'Tas pembawa', 'category' => 'accessory', 'price' => 450000]);
 
@@ -34,9 +40,14 @@ beforeEach(function () {
         'path' => 'trial', 'product_id' => $this->home->id, 'trial_started_on' => '2026-11-10', 'accessories' => [],
         'symptom_form_filled' => false, 'status' => 'new', ...$o,
     ];
-    $this->makeLead = fn (array $o = [], ?User $sales = null) => app(LeadService::class)->create(
-        app(LeadService::class)->validate(($this->payload)($o)), $sales ?? $this->dewi
-    );
+    $this->makeLead = function (array $o = [], ?User $sales = null) {
+        // A direct purchase must name the inventory unit; pick the next free one unless a test says otherwise.
+        if (($o['path'] ?? 'trial') === 'direct' && ! array_key_exists('unit_id', $o)) {
+            $o['unit_id'] = collect(InvoiceService::availableUnits($this->home))->keys()->first();
+        }
+
+        return app(LeadService::class)->create(app(LeadService::class)->validate(($this->payload)($o)), $sales ?? $this->dewi);
+    };
     $this->followUp = fn (Lead $lead, string $day, string $response, ?User $by = null) => app(FollowUpService::class)->add(
         $lead, ['followed_up_on' => $day, 'channel' => 'whatsapp', 'response' => $response], $by ?? $this->dewi
     );
@@ -50,7 +61,7 @@ describe('ID numbers', function () {
 
         expect($a->code)->toBe("LD-$year-0001")->and($b->code)->toBe("LD-$year-0002");
 
-        $invoice = app(InvoiceService::class)->createForLead($a, [['product_id' => $this->home->id, 'quantity' => 1, 'unit_price' => 100]], $this->dewi);
+        $invoice = app(InvoiceService::class)->createForLead($a, [['product_id' => $this->kanula->id, 'quantity' => 1, 'unit_price' => 100]], $this->dewi);
         expect($invoice->code)->toBe("INV-$year-0001");
     });
 });
@@ -153,6 +164,63 @@ describe('direct purchase', function () {
     });
 });
 
+describe('inventory ID on purchases', function () {
+    it('requires an available unit of the right type for a direct purchase', function (array $override) {
+        expect(fn () => app(LeadService::class)->validate(($this->payload)(['path' => 'direct'] + $override)))->toThrow(ValidationException::class);
+    })->with([
+        'no unit' => [[]],
+        'unknown unit' => [['unit_id' => 9999]],
+    ]);
+
+    it('rejects a unit of another type, a non-available unit and a unit already on an unpaid invoice', function () {
+        $other = Unit::factory()->create(['unit_type_id' => UnitType::factory()->create(['name' => 'H2 Pro'])->id]);
+        expect(fn () => app(LeadService::class)->validate(($this->payload)(['path' => 'direct', 'unit_id' => $other->id])))->toThrow(ValidationException::class);
+
+        $loaned = $this->units[1];
+        app(UnitStatusService::class)->transition($loaned, UnitStatus::OnLoan);
+        expect(fn () => app(LeadService::class)->validate(($this->payload)(['path' => 'direct', 'unit_id' => $loaned->id])))->toThrow(ValidationException::class);
+
+        $lead = ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[0]->id]);
+        expect(fn () => app(LeadService::class)->validate(($this->payload)(['path' => 'direct', 'unit_id' => $this->units[0]->id])))->toThrow(ValidationException::class)
+            ->and(array_keys(InvoiceService::availableUnits($this->home)))->not->toContain($this->units[0]->id);
+    });
+
+    it('keeps the unit reserved while unpaid, sells it when paid, and releases it when cancelled', function () {
+        $lead = ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[0]->id]);
+        $invoice = $lead->invoices()->sole();
+        expect($invoice->items->first()->unit_id)->toBe($this->units[0]->id)->and($this->units[0]->refresh()->status->value)->toBe('available');
+
+        app(InvoiceService::class)->changeStatus($invoice, InvoiceStatus::Paid, $this->admin);
+        expect($this->units[0]->refresh()->status->value)->toBe('sold')
+            ->and(ActivityLog::where('subject_type', 'unit')->where('to', 'sold')->count())->toBe(1);
+
+        $second = ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[1]->id]);
+        app(InvoiceService::class)->changeStatus($second->invoices()->sole(), InvoiceStatus::Cancelled, $this->admin);
+        expect(array_keys(InvoiceService::availableUnits($this->home)))->toContain($this->units[1]->id);
+    });
+
+    it('refuses to mark paid when the unit is no longer available', function () {
+        $lead = ($this->makeLead)(['path' => 'direct', 'unit_id' => $this->units[0]->id]);
+        app(UnitStatusService::class)->transition($this->units[0], UnitStatus::OnLoan);
+
+        expect(fn () => app(InvoiceService::class)->changeStatus($lead->invoices()->sole(), InvoiceStatus::Paid, $this->admin))->toThrow(ValidationException::class);
+        expect($lead->invoices()->sole()->status->value)->toBe('unpaid')->and($lead->refresh()->status->value)->toBe('new');
+    });
+
+    it('needs a unit per main product on a manual invoice, and none for accessories', function () {
+        $lead = ($this->makeLead)();
+        $line = fn (array $o) => ['product_id' => $this->home->id, 'quantity' => 1, 'unit_price' => 1, ...$o];
+
+        expect(fn () => app(InvoiceService::class)->validate(['items' => [$line([])]]))->toThrow(ValidationException::class);
+        expect(fn () => app(InvoiceService::class)->validate(['items' => [$line(['unit_id' => $this->units[0]->id, 'quantity' => 2])]]))->toThrow(ValidationException::class);
+        expect(fn () => app(InvoiceService::class)->validate(['items' => [['product_id' => $this->kanula->id, 'quantity' => 1, 'unit_price' => 1, 'unit_id' => $this->units[0]->id]]]))->toThrow(ValidationException::class);
+
+        $ok = app(InvoiceService::class)->validate(['items' => [$line(['unit_id' => $this->units[0]->id]), ['product_id' => $this->kanula->id, 'quantity' => 2, 'unit_price' => 150000]]]);
+        $invoice = app(InvoiceService::class)->createForLead($lead, $ok['items'], $this->admin);
+        expect($invoice->items->pluck('unit_id')->all())->toBe([$this->units[0]->id, null]);
+    });
+});
+
 describe('invoice status', function () {
     it('marks a paid invoice and turns the lead into a purchase', function () {
         $lead = ($this->makeLead)(['path' => 'direct']);
@@ -181,7 +249,7 @@ describe('invoice status', function () {
 
     it('stops sales from invoicing someone else’s lead', function () {
         $lead = ($this->makeLead)();
-        expect(fn () => app(InvoiceService::class)->createForLead($lead, [['product_id' => $this->home->id, 'quantity' => 1, 'unit_price' => 1]], $this->rizky))
+        expect(fn () => app(InvoiceService::class)->createForLead($lead, [['product_id' => $this->kanula->id, 'quantity' => 1, 'unit_price' => 1]], $this->rizky))
             ->toThrow(ValidationException::class);
     });
 });
@@ -221,7 +289,7 @@ describe('admin screens', function () {
 
         Livewire::test(InvoicesRelationManager::class, ['ownerRecord' => $lead, 'pageClass' => ViewLead::class])
             ->callAction(TestAction::make('create')->table(), ['items' => [
-                ['product_id' => $this->home->id, 'quantity' => 1, 'unit_price' => 8500000],
+                ['product_id' => $this->home->id, 'quantity' => 1, 'unit_price' => 8500000, 'unit_id' => $this->units[0]->id],
                 ['product_id' => $this->kanula->id, 'quantity' => 1, 'unit_price' => 150000],
             ]])->assertHasNoFormErrors();
 
@@ -243,7 +311,7 @@ describe('admin screens', function () {
         $this->actingAs($this->admin);
 
         Livewire::test(CreateLead::class)
-            ->fillForm(($this->payload)(['path' => 'direct', 'sales_id' => $this->rizky->id, 'accessories' => [['product_id' => $this->tas->id, 'quantity' => 1]]]))
+            ->fillForm(($this->payload)(['path' => 'direct', 'unit_id' => $this->units[2]->id, 'sales_id' => $this->rizky->id, 'accessories' => [['product_id' => $this->tas->id, 'quantity' => 1]]]))
             ->call('create')->assertHasNoFormErrors();
 
         $lead = Lead::sole();

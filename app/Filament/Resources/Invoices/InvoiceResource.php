@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Filament\Resources\Invoices\Pages\ListInvoices;
 use App\Filament\Resources\Invoices\Pages\ViewInvoice;
 use App\Filament\Resources\Leads\LeadResource;
+use App\Filament\Resources\Units\UnitResource;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Support\Rupiah;
@@ -41,7 +42,7 @@ class InvoiceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->visibleTo(auth()->user())->with(['lead.customer', 'lead.sales:id,name', 'items']);
+        return parent::getEloquentQuery()->visibleTo(auth()->user())->with(['lead.customer', 'lead.sales:id,name', 'items.unit']);
     }
 
     public static function table(Table $table): Table
@@ -79,8 +80,10 @@ class InvoiceResource extends Resource
                 TextEntry::make('notes')->label('Catatan')->placeholder('-'),
             ]),
             Section::make('Item')->schema([
-                RepeatableEntry::make('items')->hiddenLabel()->columns(4)->schema([
+                RepeatableEntry::make('items')->hiddenLabel()->columns(5)->schema([
                     TextEntry::make('name')->label('Produk / aksesoris'),
+                    TextEntry::make('unit.code')->label('ID inventori')->fontFamily('mono')->placeholder('-')
+                        ->url(fn (InvoiceItem $i) => $i->unit_id ? UnitResource::getUrl('view', ['record' => $i->unit_id]) : null),
                     TextEntry::make('quantity')->label('Jumlah'),
                     TextEntry::make('unit_price')->label('Harga satuan')->formatStateUsing(fn ($state) => Rupiah::format($state)),
                     TextEntry::make('subtotal')->label('Subtotal')->state(fn (InvoiceItem $i) => Rupiah::format($i->subtotal())),

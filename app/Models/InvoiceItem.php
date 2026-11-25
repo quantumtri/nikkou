@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['invoice_id', 'product_id', 'name', 'unit_price', 'quantity'])]
+#[Fillable(['invoice_id', 'product_id', 'unit_id', 'name', 'unit_price', 'quantity'])]
 class InvoiceItem extends Model
 {
     public $timestamps = false;
@@ -14,6 +14,11 @@ class InvoiceItem extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(Unit::class);
     }
 
     public function subtotal(): int

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Products;
 use App\Enums\ProductCategory;
 use App\Filament\Resources\Products\Pages\ManageProducts;
 use App\Models\Product;
+use App\Models\UnitType;
 use App\Support\Rupiah;
 use BackedEnum;
 use Filament\Actions\CreateAction;
@@ -43,7 +44,10 @@ class ProductResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')->label('Nama produk')->required()->maxLength(255)->unique(ignoreRecord: true),
-            Select::make('category')->label('Kategori')->options(ProductCategory::options())->required()->selectablePlaceholder(false),
+            Select::make('category')->label('Kategori')->options(ProductCategory::options())->required()->selectablePlaceholder(false)->live(),
+            Select::make('unit_type_id')->label('Jenis unit inventori')->options(fn () => UnitType::orderBy('name')->pluck('name', 'id'))
+                ->visible(fn ($get) => $get('category') === ProductCategory::Main->value)->live()
+                ->helperText('Produk utama dijual per unit fisik. Pilih jenis unit yang dipakai untuk memilih ID inventori saat pembelian.'),
             TextInput::make('price')->label('Harga')->numeric()->minValue(0)->maxValue(1000000000)->default(0)->prefix('Rp')->required()
                 ->helperText('Harga jual saat ini. Invoice menyimpan salinan harganya sendiri.'),
             Toggle::make('is_active')->label('Aktif')->default(true),
