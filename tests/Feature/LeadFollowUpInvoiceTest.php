@@ -10,6 +10,7 @@ use App\Filament\Resources\Leads\Pages\ListLeads;
 use App\Filament\Resources\Leads\Pages\ViewLead;
 use App\Filament\Resources\Leads\RelationManagers\FollowUpsRelationManager;
 use App\Filament\Resources\Leads\RelationManagers\InvoicesRelationManager;
+use App\Filament\Widgets\LeadStatsOverview;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Lead;
@@ -281,6 +282,26 @@ describe('invoice status', function () {
         $lead = ($this->makeLead)();
         expect(fn () => app(InvoiceService::class)->createForLead($lead, [['product_id' => $this->kanula->id, 'quantity' => 1, 'unit_price' => 1]], $this->rizky))
             ->toThrow(ValidationException::class);
+    });
+});
+
+describe('lead summary cards', function () {
+    it('counts leads per stage and shows the purchase share', function () {
+        ($this->makeLead)(['status' => 'trial_active']);
+        ($this->makeLead)(['status' => 'trial_active']);
+        ($this->makeLead)(['status' => 'offer_sent']);
+        ($this->makeLead)(['status' => 'purchased']);
+        ($this->makeLead)(['status' => 'cancelled', 'cancel_reason' => 'price_too_high']);
+        $this->actingAs($this->admin);
+
+        $widget = Livewire::test(LeadStatsOverview::class)->instance();
+        $stats = collect((fn () => $this->getStats())->call($widget))
+            ->mapWithKeys(fn ($s) => [$s->getLabel() => $s->getValue()]);
+
+        expect($stats['Total leads'])->toBe(5)->and($stats['Trial berjalan'])->toBe(2)->and($stats['Tawaran dikirim'])->toBe(1)
+            ->and($stats['Total pembelian'])->toBe(1)->and($stats['Batal'])->toBe(1);
+
+        Livewire::test(ListLeads::class)->assertSeeLivewire(LeadStatsOverview::class);
     });
 });
 

@@ -56,6 +56,10 @@
     box-shadow: none;
     border: 1px solid #e6e2e0;
 }
+/* The summary cards sit in a section wrapper; drop its outline so only the cards themselves have a line. */
+.fi-wi-stats-overview .fi-section-not-contained {
+    border: 0;
+}
 .fi-wi-stats-overview-stat-value {
     font-weight: 600;
     font-variant-numeric: tabular-nums;
